@@ -12,10 +12,10 @@ export const LoginScreen: React.FC = () => {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const setCollegeDomain = useAuthStore((state) => state.setCollegeDomain);
+  const setCollegeSchema = useAuthStore((state) => state.setCollegeSchema);
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [collegeSubdomain, setCollegeSubdomain] = useState(""); // tenant prefix e.g. "mit" or empty for default
+  const [username, setUsername] = useState("student1");
+  const [password, setPassword] = useState("student1@mit.edu.in");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -32,37 +32,40 @@ export const LoginScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      // 1. Resolve college domain if provided.
-      // E.g., if subdomain is 'mit', resolve to 'mit.localhost:8000'
-      // If it has a dot, use it directly. Otherwise append '.localhost:8000' (or production equivalent)
-      let resolvedDomain: string | null = null;
-      if (collegeSubdomain.trim()) {
-        const subdomain = collegeSubdomain.trim().toLowerCase();
-        if (subdomain.includes(".")) {
-          resolvedDomain = subdomain;
-        } else {
-          resolvedDomain = `${subdomain}.localhost:8000`; // Local development multi-tenancy helper
-        }
-      }
-      
-      // Update store with domain so httpClient knows where to route
-      setCollegeDomain(resolvedDomain);
-
-      // 2. Submit login
+      // 1. Submit login to the central endpoint (or current resolved host)
       const response = await authApi.login({ username, password });
+      console.log("Login response:", JSON.stringify(response, null, 2));
       
-      // 3. Save to auth state
-      await setAuth(response.user, response.access);
+      // 2. Save resolved college domain & schema dynamically from response
+      const resolvedDomain = response.tenant_domain || null;
+      const resolvedSchema = response.tenant_schema || null;  // Backend now returns this directly
+      await setCollegeDomain(resolvedDomain);
+      await setCollegeSchema(resolvedSchema);
 
-      Alert.alert("Success", `Welcome back, ${response.user.username}!`);
+      // 3. Construct UserProfile and save to auth state
+      const userProfile = {
+        id: response.user_id,
+        username: response.user || username,
+        email: response.email || "",
+        role: response.roleName || "student",
+        student_profile: response.profile ? {
+          student_id: response.profile.student_id || "",
+          is_face_registered: response.profile.is_face_registered ?? false,
+          locked_device_id: response.profile.locked_device_id ?? null,
+        } : undefined
+      };
+      
+      await setAuth(userProfile, response.access);
+
+      Alert.alert("Success", `Welcome back, ${userProfile.username}!`);
       
       // Route immediately to App space
       router.replace(ROUTES.APP.DASHBOARD);
     } catch (err: any) {
       console.error("Login failure", err);
-      // Reset domain if login failed so it doesn't get stuck
+      // Reset domain/schema if login failed so it doesn't get stuck
       setCollegeDomain(null);
-      
+      setCollegeSchema(null);
       Alert.alert("Login Failed", err.message || "Invalid credentials, please try again.");
     } finally {
       setLoading(false);
@@ -82,13 +85,6 @@ export const LoginScreen: React.FC = () => {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Sign In</Text>
-
-          <Input
-            label="College Subdomain (Optional)"
-            placeholder="e.g. mit, dy-patil"
-            value={collegeSubdomain}
-            onChangeText={setCollegeSubdomain}
-          />
 
           <Input
             label="Username / Email"
@@ -132,7 +128,7 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary, // Aubergine background matching frontend login page
   },
   scrollContent: {
     flexGrow: 1,
@@ -144,27 +140,28 @@ const styles = StyleSheet.create({
     marginBottom: 36,
   },
   title: {
-    fontSize: 36,
+    fontSize: 38,
     fontWeight: "800",
-    color: COLORS.primary,
-    letterSpacing: 1,
+    color: COLORS.white, // High contrast white heading
+    letterSpacing: 1.5,
   },
   subtitle: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: "rgba(255, 255, 255, 0.75)", // Soft translucent text
     marginTop: 6,
+    fontWeight: "500",
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    backgroundColor: COLORS.surface, // Clean white card in front of purple background
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    elevation: 8,
-    shadowColor: COLORS.background,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
   },
   cardTitle: {
     fontSize: 22,
@@ -190,4 +187,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
 export default LoginScreen;

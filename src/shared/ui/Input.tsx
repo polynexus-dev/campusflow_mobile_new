@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, View, Text, TextInput, ViewStyle, TextStyle } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Text, TextInput, ViewStyle, TextStyle, TouchableOpacity } from "react-native";
 import { COLORS } from "../theme/colors";
 
 interface InputProps {
@@ -29,6 +29,12 @@ export const Input: React.FC<InputProps> = ({
   inputStyle,
   editable = true,
 }) => {
+  const [isSecure, setIsSecure] = useState(secureTextEntry);
+
+  useEffect(() => {
+    setIsSecure(secureTextEntry);
+  }, [secureTextEntry]);
+
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -38,12 +44,21 @@ export const Input: React.FC<InputProps> = ({
           placeholderTextColor={COLORS.textMuted}
           value={value}
           onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={isSecure}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           style={[styles.input, inputStyle]}
           editable={editable}
         />
+        {secureTextEntry && (
+          <TouchableOpacity
+            style={styles.toggleBtn}
+            onPress={() => setIsSecure(!isSecure)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.toggleText}>{isSecure ? "Show" : "Hide"}</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -68,12 +83,26 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: COLORS.border,
     paddingHorizontal: 16,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
   },
   input: {
+    flex: 1,
+    height: "100%",
     color: COLORS.text,
     fontSize: 15,
     padding: 0, // Reset default padding
+  },
+  toggleBtn: {
+    paddingVertical: 10,
+    paddingLeft: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toggleText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.primary,
   },
   inputError: {
     borderColor: COLORS.error,

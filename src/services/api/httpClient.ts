@@ -22,6 +22,13 @@ httpClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Attach tenant schema header for local IP routing
+    // The backend CampusFlowTenantMiddleware uses this to switch to the correct tenant schema
+    const collegeSchema = useAuthStore.getState().collegeSchema;
+    if (collegeSchema) {
+      config.headers['X-Tenant'] = collegeSchema;
+    }
+
     return config;
   },
   (error) => {

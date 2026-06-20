@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, FlatList, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, FlatList, ActivityIndicator, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { attendanceApi } from "../api/attendanceApi";
 
 export const AttendanceHistoryScreen: React.FC = () => {
+  const router = useRouter();
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -11,7 +13,8 @@ export const AttendanceHistoryScreen: React.FC = () => {
     const fetchHistory = async () => {
       try {
         const list = await attendanceApi.getHistory();
-        setHistory(list);
+        const data = Array.isArray(list) ? list : (list.results || []);
+        setHistory(data);
       } catch (err) {
         console.error("Failed to load attendance history", err);
       } finally {
@@ -31,6 +34,9 @@ export const AttendanceHistoryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <Text style={styles.backBtnText}>← Back to Dashboard</Text>
+      </TouchableOpacity>
       <Text style={styles.title}>Verification Log</Text>
       {history.length === 0 ? (
         <View style={styles.empty}>
@@ -158,6 +164,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  backBtn: {
+    alignSelf: "flex-start",
+    marginBottom: 20,
+    marginTop: 40,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  backBtnText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
 export default AttendanceHistoryScreen;

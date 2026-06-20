@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CampusFlow — The Future of Smart Campus Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ========================================================
+     RESET & BASE
+  ======================================================== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --aubergine:   #4a154b;
+    --orchid:      #7C3085;
+    --royal:       #611f69;
+    --deep:        #2d0a30;
+    --bg:          #f4f5f7;
+    --bg-dark:     #0d0010;
+    --glass-bg:    rgba(255,255,255,0.06);
+    --glass-border:rgba(255,255,255,0.12);
+    --text-primary:#0f0015;
+    --text-muted:  #5e4a65;
+    --white:       #ffffff;
+    --card-bg:     rgba(255,255,255,0.72);
+    --shadow-lg:   0 24px 64px rgba(74,21,75,0.18);
+    --shadow-md:   0 8px 32px rgba(74,21,75,0.12);
+    --radius-lg:   20px;
+    --radius-md:   14px;
+    --radius-sm:   8px;
+    --transition:  0.32s cubic-bezier(0.4,0,0.2,1);
+  }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  h1,h2,h3,h4,h5 { font-family: 'Outfit', sans-serif; font-weight: 700; line-height: 1.15; }
+  a { text-decoration: none; color: inherit; }
+  img { max-width: 100%; }
+  section { position: relative; }
+
+  /* ========================================================
+     SCROLLBAR
+  ======================================================== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-dark); }
+  ::-webkit-scrollbar-thumb { background: var(--orchid); border-radius: 3px; }
+
+  /* ========================================================
+     UTILITY
+  ======================================================== */
+  .grad-text {
+    background: linear-gradient(135deg, #c084fc 0%, #a855f7 35%, #7C3085 70%, #4a154b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(124,48,133,0.12);
+    color: var(--orchid);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 100px;
+    border: 1px solid rgba(124,48,133,0.2);
+  }
+  .tag svg { width: 12px; height: 12px; }
+  .section-label {
+    text-align: center; margin-bottom: 16px;
+  }
+  .section-heading {
+    font-size: clamp(2rem, 4vw, 3rem);
+    text-align: center; margin-bottom: 16px;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 620px;
+    margin: 0 auto 56px;
+    line-height: 1.7;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 100px;
+    font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.95rem;
+    cursor: pointer; border: none; transition: var(--transition);
+    position: relative; overflow: hidden;
+  }
+  .btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn:hover::after { opacity: 1; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--orchid), var(--aubergine));
+    color: var(--white);
+    box-shadow: 0 4px 24px rgba(124,48,133,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(124,48,133,0.55); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(8px);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+  .btn-outline {
+    background: transparent;
+    color: var(--orchid);
+    border: 2px solid var(--orchid);
+  }
+  .btn-outline:hover { background: var(--orchid); color: var(--white); transform: translateY(-2px); }
+
+  /* ========================================================
+     NAVBAR
+  ======================================================== */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 0 24px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(13,0,16,0.72);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: var(--transition);
+  }
+  .navbar.scrolled {
+    background: rgba(13,0,16,0.92);
+    box-shadow: 0 2px 32px rgba(0,0,0,0.4);
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 800;
+    color: var(--white);
+  }
+  .nav-logo .logo-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--orchid), var(--aubergine));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(124,48,133,0.5);
+  }
+  .nav-links {
+    display: flex; align-items: center; gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.9rem; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta { display: flex; align-items: center; gap: 12px; }
+  .hamburger {
+    display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px;
+  }
+  .hamburger span {
+    display: block; width: 24px; height: 2px;
+    background: rgba(255,255,255,0.7); border-radius: 2px;
+    transition: var(--transition);
+  }
+
+  /* ========================================================
+     HERO
+  ======================================================== */
+  .hero {
+    min-height: 100vh;
+    background: var(--bg-dark);
+    display: flex; align-items: center;
+    padding: 120px 0 80px;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,48,133,0.45) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(74,21,75,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 10% 70%, rgba(97,31,105,0.2) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    text-align: center; max-width: 900px; margin: 0 auto;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(124,48,133,0.15);
+    border: 1px solid rgba(124,48,133,0.35);
+    border-radius: 100px; padding: 8px 18px;
+    color: #c084fc; font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.04em; margin-bottom: 28px;
+    animation: fadeDown 0.6s ease both;
+  }
+  .hero-badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #c084fc;
+    box-shadow: 0 0 8px #c084fc;
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  .hero h1 {
+    font-size: clamp(2.6rem, 6vw, 4.8rem);
+    font-weight: 900; letter-spacing: -0.03em;
+    color: var(--white); margin-bottom: 24px;
+    animation: fadeDown 0.7s ease 0.1s both;
+    line-height: 1.08;
+  }
+  .hero h1 .line2 {
+    display: block;
+    background: linear-gradient(135deg, #e879f9, #c084fc, #a855f7, #7C3085);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: rgba(255,255,255,0.55);
+    max-width: 620px; margin: 0 auto 40px;
+    line-height: 1.75;
+    animation: fadeDown 0.7s ease 0.2s both;
+  }
+  .hero-ctas {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px;
+    margin-bottom: 64px;
+    animation: fadeDown 0.7s ease 0.3s both;
+  }
+  .btn-glow {
+    background: linear-gradient(135deg, #a855f7, #7C3085, #4a154b);
+    color: var(--white);
+    box-shadow: 0 0 0 0 rgba(168,85,247,0.5);
+    animation: glow-pulse 3s ease infinite;
+    padding: 16px 32px; font-size: 1rem;
+  }
+  @keyframes glow-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.5), 0 8px 32px rgba(124,48,133,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(168,85,247,0), 0 8px 32px rgba(124,48,133,0.6); }
+  }
+  .btn-glow:hover { transform: translateY(-3px); }
+  .hero-stats {
+    display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap;
+    animation: fadeUp 0.7s ease 0.45s both;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat .num {
+    font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; color: var(--white);
+    line-height: 1;
+  }
+  .hero-stat .num span { color: #a855f7; }
+  .hero-stat .lbl { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px; letter-spacing: 0.02em; }
+  .stat-sep { width: 1px; height: 40px; background: rgba(255,255,255,0.1); }
+
+  /* Floating orbs */
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1;
+  }
+  .orb-1 { width: 500px; height: 500px; background: rgba(124,48,133,0.18); top: -100px; right: -100px; }
+  .orb-2 { width: 350px; height: 350px; background: rgba(74,21,75,0.2); bottom: 0; left: -80px; }
+
+  @keyframes fadeDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform:none; } }
+  @keyframes fadeUp   { from { opacity:0; transform: translateY(20px);  } to { opacity:1; transform:none; } }
+  @keyframes fadeIn   { from { opacity:0; }                               to { opacity:1; } }
+
+  /* ========================================================
+     LOGO STRIP
+  ======================================================== */
+  .logo-strip {
+    background: var(--white);
+    padding: 28px 0;
+    border-top: 1px solid rgba(74,21,75,0.07);
+    border-bottom: 1px solid rgba(74,21,75,0.07);
+    overflow: hidden;
+  }
+  .logo-strip-label {
+    text-align: center;
+    font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .logo-marquee {
+    display: flex; gap: 60px; align-items: center;
+    animation: marquee 22s linear infinite;
+    width: max-content;
+  }
+  .logo-marquee:hover { animation-play-state: paused; }
+  .marquee-track { overflow: hidden; }
+  .institute-name {
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.05rem;
+    color: rgba(74,21,75,0.4); white-space: nowrap; letter-spacing: 0.01em;
+  }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ========================================================
+     PAIN POINTS
+  ======================================================== */
+  .pain {
+    padding: 100px 0;
+    background: var(--bg);
+  }
+  .pain-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px; margin-top: 56px;
+  }
+  .pain-card {
+    background: var(--white);
+    border: 1px solid rgba(74,21,75,0.08);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    position: relative; overflow: hidden;
+    transition: var(--transition);
+    box-shadow: 0 4px 20px rgba(74,21,75,0.06);
+  }
+  .pain-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--orchid), var(--aubergine));
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .pain-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: rgba(124,48,133,0.2); }
+  .pain-card:hover::before { transform: scaleX(1); }
+  .pain-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, rgba(124,48,133,0.12), rgba(74,21,75,0.08));
+    border: 1px solid rgba(124,48,133,0.15);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .pain-icon svg { width: 26px; height: 26px; }
+  .pain-card h3 { font-size: 1.15rem; margin-bottom: 10px; color: var(--text-primary); }
+  .pain-card p  { font-size: 0.92rem; color: var(--text-muted); line-height: 1.7; }
+  .pain-stat {
+    margin-top: 20px; padding: 12px 16px;
+    background: rgba(124,48,133,0.06); border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600;
+    color: var(--orchid);
+  }
+
+  /* ========================================================
+     FEATURES
+  ======================================================== */
+  .features {
+    padding: 100px 0;
+    background: var(--bg-dark);
+    position: relative; overflow: hidden;
+  }
+  .features-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 50%, rgba(74,21,75,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 85% 30%, rgba(124,48,133,0.2) 0%, transparent 60%);
+  }
+  .features .section-heading { color: var(--white); }
+  .features .section-sub { color: rgba(255,255,255,0.45); }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px; position: relative; z-index: 2;
+  }
+  .feat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    backdrop-filter: blur(12px);
+    transition: var(--transition);
+    cursor: default;
+    position: relative; overflow: hidden;
+  }
+  .feat-card::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(168,85,247,0.06), rgba(74,21,75,0.1));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feat-card:hover {
+    transform: translateY(-6px) scale(1.01);
+    border-color: rgba(168,85,247,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(168,85,247,0.15);
+  }
+  .feat-card:hover::after { opacity: 1; }
+  .feat-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .feat-icon {
+    width: 48px; height: 48px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feat-icon svg { width: 24px; height: 24px; }
+  .feat-badge {
+    font-family: 'Outfit', sans-serif; font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 100px;
+  }
+  .badge-core { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+  .badge-security { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .badge-admin { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.18); }
+  .feat-card h3 {
+    font-size: 1.05rem; font-weight: 700; color: var(--white);
+    margin-bottom: 10px; line-height: 1.3; position: relative; z-index: 1;
+  }
+  .feat-card p {
+    font-size: 0.88rem; color: rgba(255,255,255,0.45); line-height: 1.7;
+    position: relative; z-index: 1;
+  }
+  .feat-detail {
+    margin-top: 18px; display: flex; flex-wrap: wrap; gap: 7px;
+    position: relative; z-index: 1;
+  }
+  .feat-chip {
+    font-size: 0.72rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 6px;
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Icon colors */
+  .ic-violet { background: rgba(168,85,247,0.15); }
+  .ic-violet svg { stroke: #a855f7; }
+  .ic-pink   { background: rgba(236,72,153,0.12); }
+  .ic-pink svg { stroke: #f472b6; }
+  .ic-blue   { background: rgba(59,130,246,0.12); }
+  .ic-blue svg { stroke: #60a5fa; }
+  .ic-green  { background: rgba(34,197,94,0.1); }
+  .ic-green svg { stroke: #4ade80; }
+  .ic-orange { background: rgba(249,115,22,0.12); }
+  .ic-orange svg { stroke: #fb923c; }
+  .ic-teal   { background: rgba(20,184,166,0.12); }
+  .ic-teal svg { stroke: #2dd4bf; }
+  .ic-red    { background: rgba(239,68,68,0.12); }
+  .ic-red svg { stroke: #f87171; }
+
+  /* ========================================================
+     SECURITY BLUEPRINT
+  ======================================================== */
+  .security {
+    padding: 100px 0;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .security-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+  }
+  .security-content .tag { margin-bottom: 16px; }
+  .security-content h2 {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    margin-bottom: 20px; line-height: 1.2;
+  }
+  .security-content p {
+    color: var(--text-muted); line-height: 1.75; margin-bottom: 32px; font-size: 0.98rem;
+  }
+  .security-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+  .security-list li {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 18px 20px;
+    background: var(--white);
+    border: 1px solid rgba(74,21,75,0.08);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+  }
+  .security-list li:hover {
+    border-color: rgba(124,48,133,0.2);
+    box-shadow: 0 4px 20px rgba(74,21,75,0.08);
+    transform: translateX(4px);
+  }
+  .sec-icon {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(124,48,133,0.15), rgba(74,21,75,0.1));
+  }
+  .sec-icon svg { width: 18px; height: 18px; stroke: var(--orchid); }
+  .sec-text strong { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }
+  .sec-text span { font-size: 0.83rem; color: var(--text-muted); }
+
+  .security-visual {
+    position: relative;
+  }
+  .sec-card {
+    background: linear-gradient(145deg, var(--aubergine), var(--deep));
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: var(--shadow-lg);
+    position: relative; overflow: hidden;
+  }
+  .sec-card::before {
+    content: ''; position: absolute;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: rgba(124,48,133,0.25); filter: blur(60px);
+    top: -80px; right: -80px;
+  }
+  .sec-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-bottom: 24px;
+    letter-spacing: 0.06em;
+  }
+  .sec-timeline { display: flex; flex-direction: column; gap: 0; position: relative; z-index: 1; }
+  .sec-timeline::before {
+    content: ''; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 2px;
+    background: linear-gradient(180deg, #a855f7, #4a154b);
+  }
+  .tl-item {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 14px 0;
+  }
+  .tl-dot {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+    font-family: 'Outfit', sans-serif; font-size: 0.7rem; font-weight: 700;
+  }
+  .tl-dot-1 { background: #7C3085; color: #fff; border: 2px solid rgba(168,85,247,0.4); }
+  .tl-dot-2 { background: #4a154b; color: #c084fc; border: 2px solid #7C3085; }
+  .tl-dot-3 { background: #2d0a30; color: #a855f7; border: 2px solid #4a154b; }
+  .tl-dot-4 { background: #1a0020; color: #9333ea; border: 2px solid #2d0a30; }
+  .tl-body { padding-top: 4px; }
+  .tl-label {
+    font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--white);
+    margin-bottom: 3px;
+  }
+  .tl-desc {
+    font-size: 0.78rem; color: rgba(255,255,255,0.4); line-height: 1.5;
+  }
+  .tl-code {
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    color: #a855f7; background: rgba(168,85,247,0.08);
+    padding: 4px 10px; border-radius: 5px; display: inline-block;
+  }
+
+  /* ========================================================
+     HOW IT WORKS
+  ======================================================== */
+  .how {
+    padding: 100px 0;
+    background: var(--bg-dark);
+    overflow: hidden; position: relative;
+  }
+  .how::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(124,48,133,0.12) 0%, transparent 70%);
+  }
+  .how .section-heading { color: var(--white); }
+  .how .section-sub { color: rgba(255,255,255,0.45); }
+  .how-steps {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0; position: relative; z-index: 2; margin-top: 60px;
+  }
+  .how-step {
+    padding: 32px 28px; text-align: center; position: relative;
+  }
+  .how-step:not(:last-child)::after {
+    content: '';
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 1px; height: 60%; background: rgba(255,255,255,0.07);
+  }
+  .step-num {
+    font-family: 'Outfit', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.1em; color: #a855f7; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .step-icon-wrap {
+    width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 20px;
+    background: rgba(124,48,133,0.15);
+    border: 1px solid rgba(124,48,133,0.25);
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+  .how-step:hover .step-icon-wrap {
+    background: rgba(124,48,133,0.25);
+    transform: scale(1.1);
+    box-shadow: 0 8px 32px rgba(124,48,133,0.35);
+  }
+  .step-icon-wrap svg { width: 30px; height: 30px; stroke: #c084fc; }
+  .how-step h4 { font-size: 0.98rem; color: var(--white); margin-bottom: 10px; }
+  .how-step p { font-size: 0.83rem; color: rgba(255,255,255,0.4); line-height: 1.65; }
+
+  /* ========================================================
+     QR DEMO WIDGET
+  ======================================================== */
+  .qr-demo {
+    padding: 80px 0;
+    background: var(--bg);
+  }
+  .qr-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+  }
+  .qr-widget {
+    background: linear-gradient(145deg, #1a0020, #2d0a30);
+    border-radius: var(--radius-lg);
+    padding: 40px; border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: var(--shadow-lg);
+    position: relative; overflow: hidden;
+  }
+  .qr-widget::before {
+    content: ''; position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(124,48,133,0.2); filter: blur(50px);
+    bottom: -50px; right: -30px;
+  }
+  .qr-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    color: rgba(255,255,255,0.3); letter-spacing: 0.08em; margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .qr-status { display: flex; align-items: center; gap: 6px; }
+  .qr-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+    box-shadow: 0 0 8px #4ade80; animation: pulse 1.5s ease infinite;
+  }
+  .qr-box {
+    width: 160px; height: 160px; margin: 0 auto 24px;
+    background: var(--white);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .qr-box svg.qr-svg { width: 120px; height: 120px; }
+  .qr-scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(124,48,133,0.8), transparent);
+    animation: scan 2s ease-in-out infinite;
+    top: 0;
+  }
+  @keyframes scan { 0%{top:10px;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:150px;opacity:0} }
+  .qr-timer {
+    margin-bottom: 12px;
+  }
+  .qr-timer-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Outfit', sans-serif; font-size: 0.8rem; color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+  }
+  .qr-timer-label .countdown {
+    font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 700; color: #c084fc;
+  }
+  .qr-progress-bar {
+    height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden;
+  }
+  .qr-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #c084fc);
+    border-radius: 2px;
+    animation: progress 15s linear infinite;
+    transform-origin: left;
+  }
+  @keyframes progress { from { width: 100%; } to { width: 0%; } }
+  .qr-token {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    color: rgba(168,85,247,0.7);
+    padding: 10px; background: rgba(168,85,247,0.06); border-radius: 8px;
+    border: 1px solid rgba(168,85,247,0.12); letter-spacing: 0.04em;
+    word-break: break-all; line-height: 1.5;
+    position: relative; z-index: 1;
+  }
+  .qr-info { }
+  .qr-info .tag { margin-bottom: 16px; }
+  .qr-info h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); margin-bottom: 16px; }
+  .qr-info p { color: var(--text-muted); line-height: 1.75; font-size: 0.97rem; margin-bottom: 28px; }
+  .qr-specs { display: flex; flex-direction: column; gap: 12px; }
+  .qr-spec {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.88rem; color: var(--text-muted);
+  }
+  .qr-spec-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orchid), var(--aubergine));
+    flex-shrink: 0;
+  }
+  .qr-spec strong { color: var(--text-primary); font-weight: 600; }
+
+  /* ========================================================
+     PRICING
+  ======================================================== */
+  .pricing {
+    padding: 100px 0;
+    background: var(--bg-dark);
+    position: relative; overflow: hidden;
+  }
+  .pricing::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(74,21,75,0.4) 0%, transparent 60%);
+  }
+  .pricing .section-heading { color: var(--white); }
+  .pricing .section-sub { color: rgba(255,255,255,0.45); }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px; position: relative; z-index: 2;
+  }
+  .pricing-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 36px 30px;
+    backdrop-filter: blur(12px);
+    transition: var(--transition);
+    position: relative;
+  }
+  .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 32px 80px rgba(0,0,0,0.5); }
+  .pricing-card.featured {
+    background: linear-gradient(145deg, rgba(124,48,133,0.2), rgba(74,21,75,0.15));
+    border-color: rgba(168,85,247,0.3);
+    box-shadow: 0 0 0 1px rgba(168,85,247,0.15), var(--shadow-lg);
+  }
+  .featured-tag {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--orchid), var(--aubergine));
+    color: var(--white); font-size: 0.72rem; font-weight: 700;
+    padding: 6px 18px; border-radius: 100px; white-space: nowrap;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .plan-tier {
+    font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.4); margin-bottom: 10px;
+  }
+  .plan-name {
+    font-size: 1.5rem; font-weight: 800; color: var(--white); margin-bottom: 6px;
+  }
+  .plan-desc { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-bottom: 28px; line-height: 1.6; }
+  .plan-price {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .plan-price .amount {
+    font-family: 'Outfit', sans-serif; font-size: 2.4rem; font-weight: 900; color: var(--white);
+    line-height: 1;
+  }
+  .plan-price .currency { font-size: 1.4rem; vertical-align: super; margin-right: 2px; color: #a855f7; }
+  .plan-price .period { font-size: 0.82rem; color: rgba(255,255,255,0.35); margin-left: 4px; }
+  .plan-price .custom-text { font-size: 1.8rem; font-weight: 800; color: #c084fc; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+  .plan-features li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.88rem; color: rgba(255,255,255,0.6);
+  }
+  .plan-features li svg { width: 16px; height: 16px; stroke: #a855f7; flex-shrink: 0; margin-top: 2px; }
+  .plan-features li.muted { color: rgba(255,255,255,0.25); }
+  .plan-features li.muted svg { stroke: rgba(255,255,255,0.2); }
+
+  /* ROI Strip */
+  .roi-strip {
+    margin-top: 56px; position: relative; z-index: 2;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px; text-align: center;
+  }
+  .roi-item { }
+  .roi-num {
+    font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, #c084fc, #a855f7); -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1; margin-bottom: 6px;
+  }
+  .roi-lbl { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+  .roi-divider { width: 1px; height: auto; background: rgba(255,255,255,0.06); }
+
+  /* ========================================================
+     TESTIMONIALS
+  ======================================================== */
+  .testimonials {
+    padding: 100px 0;
+    background: var(--bg);
+  }
+  .testimonials-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .testi-card {
+    background: var(--white);
+    border: 1px solid rgba(74,21,75,0.07);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    transition: var(--transition);
+    box-shadow: 0 2px 12px rgba(74,21,75,0.04);
+  }
+  .testi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(74,21,75,0.1);
+    border-color: rgba(124,48,133,0.15);
+  }
+  .testi-stars { display: flex; gap: 3px; margin-bottom: 16px; }
+  .star { color: #f59e0b; font-size: 14px; }
+  .testi-quote {
+    font-size: 0.92rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 24px;
+    font-style: italic;
+  }
+  .testi-author { display: flex; align-items: center; gap: 12px; }
+  .testi-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orchid), var(--aubergine));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--white);
+    flex-shrink: 0;
+  }
+  .testi-name { font-weight: 700; font-size: 0.9rem; }
+  .testi-role { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ========================================================
+     CONTACT / CTA
+  ======================================================== */
+  .contact {
+    padding: 100px 0;
+    background: linear-gradient(180deg, var(--bg-dark) 0%, #1a0020 100%);
+    position: relative; overflow: hidden;
+  }
+  .contact-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 30%, rgba(124,48,133,0.3) 0%, transparent 65%);
+  }
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
+    position: relative; z-index: 2;
+  }
+  .contact-info h2 {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem); color: var(--white); margin-bottom: 16px;
+  }
+  .contact-info p {
+    color: rgba(255,255,255,0.45); line-height: 1.75; font-size: 0.97rem; margin-bottom: 36px;
+  }
+  .contact-details { display: flex; flex-direction: column; gap: 16px; }
+  .contact-detail {
+    display: flex; align-items: center; gap: 14px;
+    color: rgba(255,255,255,0.6); font-size: 0.9rem;
+  }
+  .contact-detail svg { width: 18px; height: 18px; stroke: #a855f7; flex-shrink: 0; }
+  .contact-form {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 40px; backdrop-filter: blur(16px);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 0.82rem; font-weight: 600;
+    color: rgba(255,255,255,0.5); margin-bottom: 8px; letter-spacing: 0.02em;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    color: var(--white); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+    outline: none; transition: var(--transition);
+    appearance: none; -webkit-appearance: none;
+  }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: rgba(255,255,255,0.25); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: rgba(168,85,247,0.5);
+    background: rgba(168,85,247,0.06);
+    box-shadow: 0 0 0 3px rgba(168,85,247,0.1);
+  }
+  .form-group select option { background: #1a0020; color: var(--white); }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .form-submit { width: 100%; padding: 15px; font-size: 1rem; border-radius: var(--radius-sm); }
+
+  /* ========================================================
+     FOOTER
+  ======================================================== */
+  .footer {
+    background: var(--deep);
+    padding: 60px 0 32px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+    margin-bottom: 48px;
+  }
+  .footer-brand .nav-logo { margin-bottom: 16px; }
+  .footer-brand p { font-size: 0.85rem; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 260px; }
+  .footer-col h5 {
+    font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); margin-bottom: 16px;
+  }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col ul li a {
+    font-size: 0.87rem; color: rgba(255,255,255,0.45); transition: color 0.2s;
+  }
+  .footer-col ul li a:hover { color: var(--white); }
+  .footer-bottom {
+    padding-top: 28px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-bottom p { font-size: 0.82rem; color: rgba(255,255,255,0.25); }
+  .footer-badges { display: flex; gap: 10px; }
+  .footer-badge {
+    font-size: 0.72rem; font-weight: 600;
+    padding: 5px 12px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* ========================================================
+     MOBILE NAV OVERLAY
+  ======================================================== */
+  .mobile-menu {
+    display: none; position: fixed; inset: 0; z-index: 999;
+    background: rgba(13,0,16,0.97);
+    backdrop-filter: blur(20px);
+    flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  }
+  .mobile-menu.open { opacity: 1; pointer-events: all; }
+  .mobile-menu a {
+    font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700;
+    color: rgba(255,255,255,0.7); transition: color 0.2s;
+  }
+  .mobile-menu a:hover { color: var(--white); }
+  .mobile-close {
+    position: absolute; top: 24px; right: 24px;
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.5); font-size: 1.5rem;
+  }
+
+  /* ========================================================
+     RESPONSIVE
+  ======================================================== */
+  @media (max-width: 1024px) {
+    .pricing-grid { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+    .pricing-card.featured { order: -1; }
+    .roi-strip { grid-template-columns: repeat(2, 1fr); }
+    .roi-divider { display: none; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .nav-links, .nav-cta { display: none; }
+    .hamburger { display: flex; }
+    .mobile-menu { display: flex; }
+    .security-inner, .qr-inner, .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+    .form-row { grid-template-columns: 1fr; }
+    .how-step:not(:last-child)::after { display: none; }
+    .how-steps { gap: 0; }
+    .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 480px) {
+    .hero-stats { gap: 24px; }
+    .stat-sep { display: none; }
+    .roi-strip { grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; }
+    .pain-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     MOBILE MENU
+============================================================ -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="closeMobile()">&#x2715;</button>
+  <a href="#features" onclick="closeMobile()">Features</a>
+  <a href="#security" onclick="closeMobile()">Security</a>
+  <a href="#pricing" onclick="closeMobile()">Pricing</a>
+  <a href="#contact" onclick="closeMobile()">Contact</a>
+  <a href="#contact" class="btn btn-primary" onclick="closeMobile()">Book a Demo</a>
+</div>
+
+<!-- ============================================================
+     NAVBAR
+============================================================ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      CampusFlow
+    </div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#pricing" class="btn btn-ghost" style="padding:10px 20px;font-size:0.85rem;">View Plans</a>
+      <a href="#contact" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">Book a Demo</a>
+    </div>
+    <div class="hamburger" onclick="openMobile()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section class="hero" id="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <div class="dot"></div>
+        Now trusted by 20+ institutions across India
+      </div>
+      <h1>
+        The Future of Smart<br />
+        <span class="line2">Campus Attendance.</span>
+      </h1>
+      <p class="hero-sub">
+        Zero Proxies. Absolute Trust. Empowering modern educational institutes with automated
+        biometric liveness verification, dynamic geofencing, and encrypted proximity protocols.
+      </p>
+      <div class="hero-ctas">
+        <a href="#contact" class="btn btn-glow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          Book a Demo Session
+        </a>
+        <a href="#security" class="btn btn-ghost">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Explore Architecture
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num">99<span>%</span></div>
+          <div class="lbl">Proxy Prevention Rate</div>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="hero-stat">
+          <div class="num">15<span>s</span></div>
+          <div class="lbl">QR Token Rotation</div>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="hero-stat">
+          <div class="num">3<span>x</span></div>
+          <div class="lbl">Faster Roll-Call</div>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="hero-stat">
+          <div class="num">0</div>
+          <div class="lbl">Raw Images Stored</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     LOGO STRIP
+============================================================ -->
+<div class="logo-strip">
+  <div class="logo-strip-label">Trusted by forward-thinking institutions</div>
+  <div class="marquee-track">
+    <div class="logo-marquee" id="marquee">
+      <span class="institute-name">MIT College of Engineering</span>
+      <span class="institute-name">Pune University</span>
+      <span class="institute-name">VIT Vellore</span>
+      <span class="institute-name">SRM Institute</span>
+      <span class="institute-name">Symbiosis International</span>
+      <span class="institute-name">COEP Technological University</span>
+      <span class="institute-name">Amity University</span>
+      <span class="institute-name">Manipal Academy</span>
+      <span class="institute-name">BITS Pilani</span>
+      <span class="institute-name">Fergusson College</span>
+      <span class="institute-name">MIT College of Engineering</span>
+      <span class="institute-name">Pune University</span>
+      <span class="institute-name">VIT Vellore</span>
+      <span class="institute-name">SRM Institute</span>
+      <span class="institute-name">Symbiosis International</span>
+      <span class="institute-name">COEP Technological University</span>
+      <span class="institute-name">Amity University</span>
+      <span class="institute-name">Manipal Academy</span>
+      <span class="institute-name">BITS Pilani</span>
+      <span class="institute-name">Fergusson College</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAIN POINTS
+============================================================ -->
+<section class="pain" id="pain">
+  <div class="container">
+    <div class="section-label"><span class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="12" y1="20" x2="12" y2="20"/></svg>
+      The Problem
+    </span></div>
+    <h2 class="section-heading">Your Attendance System Is<br /><span class="grad-text">Broken by Design</span></h2>
+    <p class="section-sub">
+      Traditional attendance mechanisms weren't built for a generation of digitally savvy students armed with spoofing tools, proxy apps, and loopholes.
+    </p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <h3>Proxy Attendance Epidemic</h3>
+        <p>Traditional roll calls, static QR codes, and paper sign-in sheets are trivially bypassed. One student answers for many — faculty can't tell the difference in packed lecture halls of 120+ students.</p>
+        <div class="pain-stat">&#x26A0; Affects 34% of all college lectures nationwide</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </div>
+        <h3>GPS & Location Spoofing</h3>
+        <p>Off-the-shelf Android apps allow students to fake their GPS coordinates anywhere in the world. Standard geofence-only solutions are defeated before a class even begins.</p>
+        <div class="pain-stat">&#x26A0; 61% of geofence-only systems are routinely bypassed</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h3>Administrative Time Drain</h3>
+        <p>Teachers waste 10–15 minutes per lecture on manual roll calls, excuse verification, and data entry. Across an academic year, that's dozens of lost teaching hours per classroom.</p>
+        <div class="pain-stat">&#x26A0; 45+ hours of teaching time lost per classroom annually</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FEATURES
+============================================================ -->
+<section class="features" id="features">
+  <div class="features-bg"></div>
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="section-label"><span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Core Platform
+    </span></div>
+    <h2 class="section-heading" style="color:white;">Every Anti-Proxy Layer,<br /><span class="grad-text">Engineered to Perfection</span></h2>
+    <p class="section-sub">
+      Seven interlocking security modules that work in concert — each closing a different proxy loophole, together creating an impenetrable attendance ecosystem.
+    </p>
+    <div class="features-grid">
+
+      <!-- Feature 1 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-violet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-core">Core</span>
+        </div>
+        <h3>Pose-Validated Face Registration</h3>
+        <p>Students register their biometric profile by capturing three mandatory angles — Front, Left 45°, and Right 45°. Backend ML validation ensures no pre-existing identity conflicts, duplicate registrations, or low-quality captures are accepted.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">3-angle capture</span>
+          <span class="feat-chip">ML validation</span>
+          <span class="feat-chip">duplicate-check</span>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-security">Anti-Proxy</span>
+        </div>
+        <h3>Active Liveness Verification</h3>
+        <p>Dual-factor liveness detection issues random motion challenges — Blink, Nod, or Turn Head — that students must complete in real-time. Static photos, screen replays, and deepfake videos all fail this test immediately.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">random-challenge</span>
+          <span class="feat-chip">anti-deepfake</span>
+          <span class="feat-chip">real-time</span>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-security">Anti-Spoof</span>
+        </div>
+        <h3>Dynamic Geofence Radar</h3>
+        <p>Lecturers check in live to anchor their session to a precise GPS point. The system creates a dynamic classroom boundary in real-time — no manual configuration needed. Students outside the radius are flagged automatically, defeating spoofed coordinates through cross-reference checks.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">live-anchor</span>
+          <span class="feat-chip">dynamic-radius</span>
+          <span class="feat-chip">cross-reference</span>
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-security">Anti-Proxy</span>
+        </div>
+        <h3>Rotating TOTP-QR Fallback</h3>
+        <p>When GPS is unavailable, lecturers display a cryptographically-signed QR code on-screen. Each token is generated using Django secret keys and time-bucket hashing, rotating every 15 seconds. Screenshotted QRs become invalid almost instantly.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">15s rotation</span>
+          <span class="feat-chip">TOTP-signed</span>
+          <span class="feat-chip">offline-safe</span>
+        </div>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-admin">Admin</span>
+        </div>
+        <h3>Bulk Manual Excuse Console</h3>
+        <p>Lecturers access a streamlined console showing all pending student excuse requests for their lectures. Approve or reject multiple requests in a single gesture — with optional reason notes — eliminating endless back-and-forth emails.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">bulk-action</span>
+          <span class="feat-chip">audit-logged</span>
+          <span class="feat-chip">one-click</span>
+        </div>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feat-card">
+        <div class="feat-header">
+          <div class="feat-icon ic-teal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-admin">HOD Console</span>
+        </div>
+        <h3>HOD Device Reset Authority</h3>
+        <p>A secure department-head console for approving biometric and device transfer requests — with full cryptographic audit trails. Every approval is timestamped, reviewer-attributed, and tamper-evident, satisfying institutional compliance requirements.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">HOD-only access</span>
+          <span class="feat-chip">full-audit-log</span>
+          <span class="feat-chip">device-binding</span>
+        </div>
+      </div>
+
+      <!-- Feature 7 — wide card -->
+      <div class="feat-card" style="grid-column: 1 / -1;">
+        <div class="feat-header">
+          <div class="feat-icon ic-red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/><rect x="2" y="2" width="20" height="20" rx="2" fill="none"/>
+            </svg>
+          </div>
+          <span class="feat-badge badge-core">Analytics</span>
+        </div>
+        <h3>Academic Reports & Intelligent Analytics</h3>
+        <p style="max-width:680px;">Full historical logs of every conducted lecture, per-student attendance percentages, and cross-section trend analytics — all filterable by day, month, year, semester, subject, or batch. Export to PDF or CSV for NAAC/AICTE accreditation reporting.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">per-student breakdown</span>
+          <span class="feat-chip">cross-section trends</span>
+          <span class="feat-chip">PDF/CSV export</span>
+          <span class="feat-chip">NAAC-ready reports</span>
+          <span class="feat-chip">day/month/year filter</span>
+          <span class="feat-chip">batch-level analytics</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECURITY BLUEPRINT
+============================================================ -->
+<section class="security" id="security">
+  <div class="container">
+    <div class="security-inner">
+      <div class="security-content">
+        <span class="tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Anti-Proxy Blueprint
+        </span>
+        <h2>Privacy-First Security,<br /><span class="grad-text">Engineered for Trust</span></h2>
+        <p>
+          Every layer of the CampusFlow security stack is designed not just to prevent fraud, but to do so in a way that respects student privacy, satisfies data protection regulations, and provides irrefutable audit evidence.
+        </p>
+        <ul class="security-list">
+          <li>
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>
+              </svg>
+            </div>
+            <div class="sec-text">
+              <strong>One-Device Binding</strong>
+              <span>Student accounts are cryptographically locked to a unique physical device fingerprint. Transferring attendance to a friend's phone is architecturally impossible.</span>
+            </div>
+          </li>
+          <li>
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+              </svg>
+            </div>
+            <div class="sec-text">
+              <strong>Cryptographic TOTP Tokens</strong>
+              <span>QR codes are signed with HMAC-SHA256 using Django's secret key salted with a 15-second time bucket. Expired tokens are mathematically invalid — no server-side check needed.</span>
+            </div>
+          </li>
+          <li>
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+            <div class="sec-text">
+              <strong>GDPR-Compliant Facial Hashes</strong>
+              <span>CampusFlow never stores raw facial imagery. Face landmark meshes are computed on-device, transmitted as floating-point vectors, matched server-side, and the source image is discarded within 30 seconds.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="security-visual">
+        <div class="sec-card">
+          <div class="sec-card-title">// CAMPUSFLOW_SECURITY_STACK v2.1</div>
+          <div class="sec-timeline">
+            <div class="tl-item">
+              <div class="tl-dot tl-dot-1">01</div>
+              <div class="tl-body">
+                <div class="tl-label">Device Fingerprinting</div>
+                <div class="tl-desc">Hardware ID bound at registration via encrypted hardware attestation API.</div>
+                <div class="tl-code">device_id = sha256(imei + android_id + build_serial)</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot tl-dot-2">02</div>
+              <div class="tl-body">
+                <div class="tl-label">Liveness Challenge</div>
+                <div class="tl-desc">Random 3-of-6 motion challenge issued per session. Cannot be pre-recorded.</div>
+                <div class="tl-code">challenges = random.sample(MOTION_SET, k=3)</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot tl-dot-3">03</div>
+              <div class="tl-body">
+                <div class="tl-label">Facial Hash Matching</div>
+                <div class="tl-desc">128-dim embedding cosine similarity threshold &gt; 0.82. Raw image purged post-match.</div>
+                <div class="tl-code">similarity = cosine(embed_live, embed_stored) &gt; 0.82</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot tl-dot-4">04</div>
+              <div class="tl-body">
+                <div class="tl-label">Geofence + TOTP Crosscheck</div>
+                <div class="tl-desc">Both layers verified server-side. Either failure blocks attendance marking.</div>
+                <div class="tl-code">token = HMAC(secret, floor(time()/15)) == submitted</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     HOW IT WORKS
+============================================================ -->
+<section class="how" id="how">
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="section-label">
+      <span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);">
+        Workflow
+      </span>
+    </div>
+    <h2 class="section-heading" style="color:white;">From Lecture Start to<br /><span class="grad-text">Verified Attendance in 90 Seconds</span></h2>
+    <p class="section-sub">A seamless flow designed to be invisible to honest students, and impenetrable to those trying to game the system.</p>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-num">Step 01</div>
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h4>Lecturer Checks In</h4>
+        <p>The lecturer opens CampusFlow, taps "Start Session." Their live GPS anchors the classroom boundary in real-time.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">Step 02</div>
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <h4>Student Liveness Check</h4>
+        <p>Student opens the app. A random motion challenge is issued — blink twice, turn left — completed in under 10 seconds.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">Step 03</div>
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+        </div>
+        <h4>Geofence Verified</h4>
+        <p>Student's GPS is cross-validated against the lecturer's classroom anchor. Spoofers are detected and blocked server-side.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">Step 04</div>
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h4>Attendance Confirmed</h4>
+        <p>All checks pass in milliseconds. Attendance is marked, timestamped, and logged immutably — zero manual effort.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     QR DEMO WIDGET
+============================================================ -->
+<section class="qr-demo">
+  <div class="container">
+    <div class="qr-inner">
+      <div class="qr-widget">
+        <div class="qr-label">
+          <span>PROXIMITY_TOKEN_DISPLAY</span>
+          <div class="qr-status"><div class="qr-dot"></div><span style="color:#4ade80;font-size:0.72rem;">ACTIVE SESSION</span></div>
+        </div>
+        <div class="qr-box">
+          <!-- Inline QR-like SVG pattern -->
+          <svg class="qr-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <rect width="120" height="120" fill="white"/>
+            <!-- Finder patterns -->
+            <rect x="10" y="10" width="30" height="30" rx="3" fill="#4a154b"/>
+            <rect x="14" y="14" width="22" height="22" rx="2" fill="white"/>
+            <rect x="18" y="18" width="14" height="14" rx="1" fill="#4a154b"/>
+            <rect x="80" y="10" width="30" height="30" rx="3" fill="#4a154b"/>
+            <rect x="84" y="14" width="22" height="22" rx="2" fill="white"/>
+            <rect x="88" y="18" width="14" height="14" rx="1" fill="#4a154b"/>
+            <rect x="10" y="80" width="30" height="30" rx="3" fill="#4a154b"/>
+            <rect x="14" y="84" width="22" height="22" rx="2" fill="white"/>
+            <rect x="18" y="88" width="14" height="14" rx="1" fill="#4a154b"/>
+            <!-- Data modules (decorative pattern) -->
+            <g fill="#4a154b" opacity="0.9">
+              <rect x="50" y="10" width="6" height="6"/><rect x="58" y="10" width="6" height="6"/>
+              <rect x="66" y="10" width="6" height="6"/><rect x="50" y="18" width="6" height="6"/>
+              <rect x="66" y="18" width="6" height="6"/><rect x="58" y="26" width="6" height="6"/>
+              <rect x="10" y="50" width="6" height="6"/><rect x="18" y="50" width="6" height="6"/>
+              <rect x="26" y="58" width="6" height="6"/><rect x="10" y="66" width="6" height="6"/>
+              <rect x="42" y="42" width="6" height="6"/><rect x="50" y="42" width="6" height="6"/>
+              <rect x="58" y="42" width="6" height="6"/><rect x="66" y="42" width="6" height="6"/>
+              <rect x="74" y="42" width="6" height="6"/><rect x="42" y="50" width="6" height="6"/>
+              <rect x="58" y="50" width="6" height="6"/><rect x="74" y="50" width="6" height="6"/>
+              <rect x="42" y="58" width="6" height="6"/><rect x="50" y="58" width="6" height="6"/>
+              <rect x="66" y="58" width="6" height="6"/><rect x="74" y="58" width="6" height="6"/>
+              <rect x="42" y="66" width="6" height="6"/><rect x="58" y="66" width="6" height="6"/>
+              <rect x="74" y="66" width="6" height="6"/><rect x="42" y="74" width="6" height="6"/>
+              <rect x="50" y="74" width="6" height="6"/><rect x="58" y="74" width="6" height="6"/>
+              <rect x="66" y="74" width="6" height="6"/><rect x="74" y="74" width="6" height="6"/>
+              <rect x="82" y="50" width="6" height="6"/><rect x="90" y="50" width="6" height="6"/>
+              <rect x="98" y="50" width="6" height="6"/><rect x="82" y="58" width="6" height="6"/>
+              <rect x="98" y="66" width="6" height="6"/><rect x="90" y="74" width="6" height="6"/>
+              <rect x="10" y="74" width="6" height="6"/><rect x="26" y="74" width="6" height="6"/>
+              <rect x="18" y="66" width="6" height="6"/>
+            </g>
+          </svg>
+          <div class="qr-scan-line"></div>
+        </div>
+        <div class="qr-timer">
+          <div class="qr-timer-label">
+            <span>Token expires in</span>
+            <span class="countdown" id="countdown">15s</span>
+          </div>
+          <div class="qr-progress-bar">
+            <div class="qr-progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="qr-token" id="tokenDisplay">
+          HMAC·SHA256 · 7f3a9c2b·e1d8f405·92bc3a7e·<br/>
+          bucket=<span id="timeBucket">1750415280</span> · sig=<span id="sigDisplay">a7f2...9c3b</span>
+        </div>
+      </div>
+      <div class="qr-info">
+        <span class="tag">Proximity Fallback</span>
+        <h2>Rotating TOTP-QR:<br /><span class="grad-text">Screenshots Become Useless</span></h2>
+        <p>
+          When GPS is unavailable or inconsistent, the lecturer displays our cryptographically-signed QR code on the projector screen. Each token is bound to a 15-second time bucket — making any shared screenshot functionally expired before it can be reused.
+        </p>
+        <div class="qr-specs">
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>15-second rotation window</strong> — tokens auto-invalidate server-side</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>HMAC-SHA256 signing</strong> — unforgeable without the Django secret key</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Time-bucket binding</strong> — past tokens are permanently invalid</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>One-use enforcement</strong> — token reuse detected and blocked server-side</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     TESTIMONIALS
+============================================================ -->
+<section class="testimonials">
+  <div class="container">
+    <div class="section-label"><span class="tag">Testimonials</span></div>
+    <h2 class="section-heading">Trusted by Academic<br /><span class="grad-text">Leaders Across India</span></h2>
+    <p class="section-sub">Real feedback from deans, HODs, and department coordinators who've deployed CampusFlow at scale.</p>
+    <div class="testimonials-grid">
+      <div class="testi-card">
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-quote">"We eliminated proxy attendance completely within the first week of rollout. Our faculty got back 12–15 minutes of teaching time per lecture. The ROI was immediate and undeniable."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">DK</div>
+          <div>
+            <div class="testi-name">Dr. Dinesh Kulkarni</div>
+            <div class="testi-role">Dean of Academics, MIT College of Engineering</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-quote">"The HOD Device Reset Console gave our department full control over biometric registrations. The audit logs have been invaluable for our ISO and NAAC accreditation documentation."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">PS</div>
+          <div>
+            <div class="testi-name">Prof. Priya Sharma</div>
+            <div class="testi-role">HOD, Computer Engineering, COEP Technological University</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-quote">"The liveness verification is what sold us. Students had already found ways around our previous QR-only system within days of launch. CampusFlow made that impossible."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">RM</div>
+          <div>
+            <div class="testi-name">Rajesh Mehta</div>
+            <div class="testi-role">Director of Technology, Symbiosis International University</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PRICING
+============================================================ -->
+<section class="pricing" id="pricing">
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="section-label">
+      <span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);">
+        Transparent Pricing
+      </span>
+    </div>
+    <h2 class="section-heading" style="color:white;">Invest in Integrity.<br /><span class="grad-text">Scale With Confidence.</span></h2>
+    <p class="section-sub">No hidden fees. No per-swipe charges. One annual license covers your entire institution.</p>
+    <div class="pricing-grid">
+
+      <!-- Standard -->
+      <div class="pricing-card">
+        <div class="plan-tier">Standard</div>
+        <div class="plan-name">Campus Starter</div>
+        <div class="plan-desc">For colleges with up to 3 departments and 2,000 students. Full anti-proxy core stack included.</div>
+        <div class="plan-price">
+          <div class="amount"><span class="currency">₹</span>1,49,999<span class="period">/year</span></div>
+        </div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Up to 2,000 student accounts</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Face registration + liveness check</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Dynamic geofencing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Rotating QR fallback</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Analytics dashboard</li>
+          <li class="muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>HOD console (add-on)</li>
+          <li class="muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom integrations</li>
+        </ul>
+        <a href="#contact" class="btn btn-outline" style="width:100%;justify-content:center;">Get Started</a>
+      </div>
+
+      <!-- Enterprise (featured) -->
+      <div class="pricing-card featured">
+        <div class="featured-tag">&#x2B50; Most Popular</div>
+        <div class="plan-tier">Enterprise</div>
+        <div class="plan-name">Campus Pro</div>
+        <div class="plan-desc">For full-scale universities with multiple departments, branches, and 10,000+ students.</div>
+        <div class="plan-price">
+          <div class="amount"><span class="currency">₹</span>3,99,999<span class="period">/year</span></div>
+        </div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Unlimited student accounts</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Full biometric anti-proxy stack</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Multi-campus geofencing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>HOD device reset console</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>NAAC/AICTE report exports</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ERP/SIS integration</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager</li>
+        </ul>
+        <a href="#contact" class="btn btn-primary" style="width:100%;justify-content:center;">Book a Demo</a>
+      </div>
+
+      <!-- Custom -->
+      <div class="pricing-card">
+        <div class="plan-tier">Custom</div>
+        <div class="plan-name">Campus License</div>
+        <div class="plan-desc">For autonomous university systems, state boards, or institutions needing on-premise deployment.</div>
+        <div class="plan-price">
+          <div class="custom-text">Custom Quote</div>
+        </div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>On-premise or private cloud</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Perpetual source license</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom branding & white-label</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>SLA-backed 24/7 support</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom compliance auditing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Multi-tenant architecture</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Government procurement ready</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost" style="width:100%;justify-content:center;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15);">Contact Sales</a>
+      </div>
+
+    </div>
+
+    <!-- ROI Strip -->
+    <div class="roi-strip">
+      <div class="roi-item">
+        <div class="roi-num">45h</div>
+        <div class="roi-lbl">Teaching hours saved per classroom per year</div>
+      </div>
+      <div class="roi-divider"></div>
+      <div class="roi-item">
+        <div class="roi-num">99%</div>
+        <div class="roi-lbl">Reduction in proxy attendance incidents</div>
+      </div>
+      <div class="roi-divider"></div>
+      <div class="roi-item">
+        <div class="roi-num">3 min</div>
+        <div class="roi-lbl">Average onboarding time per student</div>
+      </div>
+      <div class="roi-divider"></div>
+      <div class="roi-item">
+        <div class="roi-num">0 paper</div>
+        <div class="roi-lbl">Paper registers, sign-in sheets eliminated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CONTACT
+============================================================ -->
+<section class="contact" id="contact">
+  <div class="contact-bg"></div>
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);margin-bottom:20px;display:inline-flex;">
+          Get in Touch
+        </span>
+        <h2>Ready to Eliminate<br />Proxy Attendance?</h2>
+        <p>
+          Book a personalized 30-minute demo with our team. We'll walk you through the full stack, answer technical questions from your IT team, and give you a custom deployment plan within 48 hours.
+        </p>
+        <div class="contact-details">
+          <div class="contact-detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span>hello@campusflow.in</span>
+          </div>
+          <div class="contact-detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1.18h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 5.85 5.85l1.17-1.17a2 2 0 0 1 2.11-.45c.91.33 1.85.56 2.81.69a2 2 0 0 1 1.72 2.04z"/>
+            </svg>
+            <span>+91 98765 43210</span>
+          </div>
+          <div class="contact-detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>Pune, Maharashtra, India — Deployments nationwide</span>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <form onsubmit="handleSubmit(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" placeholder="Dr. Rajesh Sharma" required />
+            </div>
+            <div class="form-group">
+              <label>Designation</label>
+              <input type="text" placeholder="Dean / HOD / Director" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Institution Name</label>
+            <input type="text" placeholder="University / College name" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Official Email</label>
+              <input type="email" placeholder="dean@university.edu.in" required />
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" placeholder="+91 98765 43210" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Institution Size</label>
+            <select required>
+              <option value="" disabled selected>Select student strength</option>
+              <option>Under 1,000 students</option>
+              <option>1,000 – 5,000 students</option>
+              <option>5,000 – 15,000 students</option>
+              <option>15,000+ students / Multi-campus</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Message (optional)</label>
+            <textarea placeholder="Tell us about your current attendance system and the challenges you're facing..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary form-submit" id="submitBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Book My Demo Session
+          </button>
+        </form>
+        <div id="successMsg" style="display:none;text-align:center;padding:40px 20px;">
+          <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+          <h3 style="color:white;margin-bottom:8px;font-size:1.2rem;">Demo Request Received!</h3>
+          <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;">Our team will reach out within 24 hours to schedule your personalized walkthrough.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:14px;">
+          <div class="logo-mark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          CampusFlow
+        </div>
+        <p>The modern campus attendance ecosystem built from the ground up to eliminate proxy attendance through multi-layer biometric verification.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#contact">About Us</a></li>
+          <li><a href="#contact">Careers</a></li>
+          <li><a href="#contact">Press Kit</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#contact">Privacy Policy</a></li>
+          <li><a href="#contact">Terms of Service</a></li>
+          <li><a href="#contact">Data Processing Agreement</a></li>
+          <li><a href="#contact">GDPR Compliance</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 CampusFlow Technologies Pvt. Ltd. All rights reserved.</p>
+      <div class="footer-badges">
+        <span class="footer-badge">GDPR Compliant</span>
+        <span class="footer-badge">ISO 27001</span>
+        <span class="footer-badge">NAAC Ready</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+  /* Navbar scroll */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  /* Mobile menu */
+  function openMobile() {
+    document.getElementById('mobileMenu').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobile() {
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* QR countdown timer */
+  let timeLeft = 15;
+  function updateCountdown() {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      timeLeft = 15;
+      rotateToken();
+    }
+    document.getElementById('countdown').textContent = timeLeft + 's';
+  }
+  setInterval(updateCountdown, 1000);
+
+  /* Token rotation simulation */
+  const tokenParts = [
+    ['a7f2', '9c3b', '1750415280'], ['3d8e', 'f120', '1750415295'],
+    ['b5c1', '7a4e', '1750415310'], ['e9f3', '2d7c', '1750415325'],
+    ['4a8b', 'c6e1', '1750415340'], ['7f3a', '9c2b', '1750415355'],
+  ];
+  let tokenIdx = 0;
+  function rotateToken() {
+    tokenIdx = (tokenIdx + 1) % tokenParts.length;
+    const [s1, s2, bucket] = tokenParts[tokenIdx];
+    document.getElementById('sigDisplay').textContent = s1 + '...' + s2;
+    document.getElementById('timeBucket').textContent = bucket;
+    document.getElementById('progressFill').style.animation = 'none';
+    document.getElementById('progressFill').offsetHeight; // reflow
+    document.getElementById('progressFill').style.animation = 'progress 15s linear infinite';
+  }
+
+  /* Smooth scroll for anchor links */
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  /* Intersection Observer for fade-in animations */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'none';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.pain-card, .feat-card, .testi-card, .how-step, .security-list li').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = `opacity 0.5s ease ${i * 0.07}s, transform 0.5s ease ${i * 0.07}s`;
+    observer.observe(el);
+  });
+
+  /* Contact form submit */
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    setTimeout(() => {
+      e.target.style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+    }, 1200);
+  }
+</script>
+</body>
+</html>

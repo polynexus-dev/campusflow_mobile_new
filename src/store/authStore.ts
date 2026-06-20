@@ -17,6 +17,7 @@ interface AuthState {
   user: UserProfile | null;
   token: string | null;
   collegeDomain: string | null;
+  collegeSchema: string | null;
   deviceId: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -24,6 +25,7 @@ interface AuthState {
   initializeAuth: () => Promise<void>;
   setAuth: (user: UserProfile, token: string) => Promise<void>;
   setCollegeDomain: (domain: string | null) => Promise<void>;
+  setCollegeSchema: (schema: string | null) => Promise<void>;
   setDeviceId: (deviceId: string) => Promise<void>;
   updateFaceRegisteredStatus: (status: boolean) => void;
   logout: () => Promise<void>;
@@ -33,6 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   collegeDomain: null,
+  collegeSchema: null,
   deviceId: null,
   isAuthenticated: false,
   isLoading: true,
@@ -42,12 +45,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const storedToken = await storage.getItem("cf_token");
       const storedUser = await storage.getItem("cf_user");
       const storedDomain = await storage.getItem("cf_domain");
+      const storedSchema = await storage.getItem("cf_schema");
       const storedDeviceId = await storage.getItem("cf_device_id");
 
       set({
         token: storedToken,
         user: storedUser ? JSON.parse(storedUser) : null,
         collegeDomain: storedDomain,
+        collegeSchema: storedSchema,
         deviceId: storedDeviceId,
         isAuthenticated: !!storedToken,
         isLoading: false,
@@ -73,6 +78,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ collegeDomain: domain });
   },
 
+  setCollegeSchema: async (schema) => {
+    if (schema) {
+      await storage.setItem("cf_schema", schema);
+    } else {
+      await storage.removeItem("cf_schema");
+    }
+    set({ collegeSchema: schema });
+  },
+
   setDeviceId: async (deviceId) => {
     await storage.setItem("cf_device_id", deviceId);
     set({ deviceId });
@@ -96,7 +110,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await storage.removeItem("cf_token");
     await storage.removeItem("cf_user");
-    // Keep collegeDomain and deviceId for better UX
+    // Keep collegeDomain, collegeSchema and deviceId for better UX
     set({ user: null, token: null, isAuthenticated: false });
   },
 }));

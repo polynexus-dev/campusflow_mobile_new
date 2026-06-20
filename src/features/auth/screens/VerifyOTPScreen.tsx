@@ -108,7 +108,7 @@ export const VerifyOTPScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary, // Deep purple brand background
     justifyContent: "center",
   },
   content: {
@@ -119,23 +119,28 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "800",
-    color: COLORS.primary,
+    color: COLORS.white, // White contrast title
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: "rgba(255, 255, 255, 0.75)", // Soft translucent text
     textAlign: "center",
     marginTop: 6,
     lineHeight: 20,
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    backgroundColor: COLORS.surface, // White card container
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
   },
   button: {
     marginTop: 12,

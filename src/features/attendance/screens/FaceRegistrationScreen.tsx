@@ -1,353 +1,457 @@
-import React, { useState, useRef } from "react";
-import { StyleSheet, View, Text, Alert, Image, TouchableOpacity, ActivityIndicator } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Dimensions,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
-import { Button } from "@/shared/ui/Button";
 import { attendanceApi } from "../api/attendanceApi";
+import { CameraCapture } from "../components/CameraCapture";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
 
-type AngleStep = "front" | "left" | "right" | "complete";
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const ANGLES = ["front", "left", "right"] as const;
+type Angle = typeof ANGLES[number];
+
+const ANGLE_LABELS: Record<Angle, string> = {
+  front: "Front View",
+  left: "Left Profile",
+  right: "Right Profile",
+};
+
+const ANGLE_INSTRUCTIONS: Record<Angle, string> = {
+  front: "Position your face in the oval and look straight at the camera.",
+  left: "Turn your head to show your LEFT profile.",
+  right: "Turn your head to show your RIGHT profile.",
+};
 
 export const FaceRegistrationScreen: React.FC = () => {
   const router = useRouter();
-  const [permission, requestPermission] = useCameraPermissions();
   const updateFaceStatus = useAuthStore((state) => state.updateFaceRegisteredStatus);
+  const user = useAuthStore((state) => state.user);
+  const isFaceRegistered = user?.student_profile?.is_face_registered ?? false;
 
-  const [step, setStep] = useState<AngleStep>("front");
-  const [photos, setPhotos] = useState<Record<string, string>>({});
-  const [capturing, setCapturing] = useState(false);
-  const [registering, setRegistering] = useState(false);
+  // ── State ──────────────────────────────────────────────────────────────
+  const [currentAngleIndex, setCurrentAngleIndex] = useState(0);
+  const [capturedImages, setCapturedImages] = useState<Record<Angle, string | null>>({
+    front: null,
+    left: null,
+    right: null,
+  });
+  const [isUploading, setIsUploading] = useState(false);
+  const [showCamera, setShowCamera] = useState(true);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
 
-  const cameraRef = useRef<any>(null);
+  const currentAngle = ANGLES[currentAngleIndex];
+  const allCaptured = ANGLES.every((angle) => capturedImages[angle] !== null);
 
-  if (!permission) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
-    );
-  }
+  // ── Capture Handler ────────────────────────────────────────────────────
+  const handleCapture = useCallback(
+    (uri: string) => {
+      setCapturedImages((prev) => {
+        const nextImages = { ...prev, [currentAngle]: uri };
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>We need camera access to capture your facial biometrics.</Text>
-        <Button title="Grant Permission" onPress={requestPermission} style={styles.permissionButton} />
-      </View>
-    );
-  }
+        // Find if there is any other angle that is still missing
+        const remainingEmptyAngle = ANGLES.find((angle) => nextImages[angle] === null);
 
-  const handleCapture = async () => {
-    if (!cameraRef.current || capturing) return;
-    setCapturing(true);
-
-    try {
-      const options = { quality: 0.85, skipProcessing: false };
-      const photo = await cameraRef.current.takePictureAsync(options);
-      
-      if (photo?.uri) {
-        const currentStep = step;
-        setPhotos((prev) => ({ ...prev, [currentStep]: photo.uri }));
-
-        if (currentStep === "front") {
-          setStep("left");
-        } else if (currentStep === "left") {
-          setStep("right");
-        } else if (currentStep === "right") {
-          setStep("complete");
+        if (remainingEmptyAngle) {
+          // Auto-advance to the next missing angle
+          const nextIndex = ANGLES.indexOf(remainingEmptyAngle);
+          setCurrentAngleIndex(nextIndex);
+        } else {
+          // All 3 angles are captured, close camera and show review screen
+          setShowCamera(false);
         }
-      }
-    } catch (error) {
-      Alert.alert("Capture Error", "Could not take photo. Please try again.");
-    } finally {
-      setCapturing(false);
-    }
+
+        return nextImages;
+      });
+    },
+    [currentAngle]
+  );
+
+  // ── Navigation Handlers ────────────────────────────────────────────────
+  const handleRetakeAngle = (angle: Angle) => {
+    const angleIndex = ANGLES.indexOf(angle);
+    setCurrentAngleIndex(angleIndex);
+    setCapturedImages((prev) => ({ ...prev, [angle]: null }));
+    setShowCamera(true);
   };
 
-  const handleReset = () => {
-    setPhotos({});
-    setStep("front");
-  };
+  // ── Upload Handler ─────────────────────────────────────────────────────
+  const handleUpload = async () => {
+    if (!allCaptured) return;
 
-  const handleRegister = async () => {
-    if (!photos.front || !photos.left || !photos.right) {
-      Alert.alert("Error", "Please capture all three angles first.");
-      return;
-    }
-    setRegistering(true);
+    setIsUploading(true);
 
     try {
       const formData = new FormData();
-      
-      formData.append("front", {
-        uri: photos.front,
-        name: "front.jpg",
-        type: "image/jpeg",
-      } as any);
 
-      formData.append("left", {
-        uri: photos.left,
-        name: "left.jpg",
-        type: "image/jpeg",
-      } as any);
+      ANGLES.forEach((angle) => {
+        const uri = capturedImages[angle];
+        if (uri) {
+          formData.append(angle, {
+            uri,
+            type: "image/jpeg",
+            name: `${angle}.jpg`,
+          } as any);
+        }
+      });
 
-      formData.append("right", {
-        uri: photos.right,
-        name: "right.jpg",
-        type: "image/jpeg",
-      } as any);
-
-      await attendanceApi.registerFace(formData);
+      const response = await attendanceApi.registerFace(formData);
       updateFaceStatus(true);
+      setRegistrationComplete(true);
 
-      Alert.alert("Success", "Facial profiles registered successfully!", [
-        {
-          text: "Go to Dashboard",
-          onPress: () => router.replace(ROUTES.APP.DASHBOARD),
-        },
+      Alert.alert(
+        "✅ Registration Successful",
+        response.message || "All 3 face angles have been stored.",
+        [
+          {
+            text: "Continue",
+            onPress: () => router.replace(ROUTES.APP.DASHBOARD),
+          },
+        ]
+      );
+    } catch (error: any) {
+      // Backend returns validation details for failed angles
+      const details = error.data?.details || error.details;
+      if (Array.isArray(details) && details.length > 0) {
+        const failedDetail = details[0];
+        const failedAngle = failedDetail?.angle as Angle;
+        const failMsg = failedDetail?.error || "Wrong head position detected.";
+        const hint = failedDetail?.hint || `Please retake the '${failedAngle}' photo.`;
+
+        Alert.alert(
+          `📸 Retake ${ANGLE_LABELS[failedAngle] || failedAngle} Photo`,
+          `${failMsg}\n\n${hint}`,
+          [
+            {
+              text: "Retake Now",
+              onPress: () => {
+                setIsUploading(false);
+                if (failedAngle) {
+                  handleRetakeAngle(failedAngle);
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Generic error fallback
+      const errorMsg = error.message || error.data?.error || "Registration failed. Please try again.";
+      Alert.alert("❌ Registration Failed", errorMsg, [
+        { text: "Retry", onPress: () => setIsUploading(false) },
       ]);
-    } catch (err: any) {
-      Alert.alert("Registration Failed", err.message || "Failed to process photos. Make sure face is clear.");
-      handleReset();
     } finally {
-      setRegistering(false);
+      setIsUploading(false);
     }
   };
 
-  const getStepInstruction = () => {
-    switch (step) {
-      case "front":
-        return "Look directly into the camera (Front Profile)";
-      case "left":
-        return "Turn your head slowly to the left (Left Profile)";
-      case "right":
-        return "Turn your head slowly to the right (Right Profile)";
-      default:
-        return "Review and submit your biometric records";
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Biometric Registration</Text>
-        <Text style={styles.subtitle}>{getStepInstruction()}</Text>
+  // ── Render: Locked if already registered ────────────────────────────────
+  if (isFaceRegistered && !registrationComplete) {
+    return (
+      <View style={styles.successContainer}>
+        <Text style={styles.successIcon}>🔒</Text>
+        <Text style={[styles.successTitle, { color: COLORS.primary }]}>Biometrics Locked</Text>
+        <Text style={styles.successText}>
+          Your face biometrics are already registered and locked. If you need to recapture your face data, please contact your HOD to request a reset.
+        </Text>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
+        >
+          <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+        </TouchableOpacity>
       </View>
+    );
+  }
 
-      {step !== "complete" ? (
+  // ── Render: Registration Complete ──────────────────────────────────────
+  if (registrationComplete) {
+    return (
+      <View style={styles.successContainer}>
+        <Text style={styles.successIcon}>🎉</Text>
+        <Text style={styles.successTitle}>Face Registered!</Text>
+        <Text style={styles.successText}>
+          Your face has been registered successfully. You can now mark attendance using your face.
+        </Text>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
+        >
+          <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Render: Camera Capture ─────────────────────────────────────────────
+  if (showCamera && !allCaptured) {
+    return (
+      <View style={styles.container}>
+        {/* Progress indicator */}
+        <View style={styles.progressBar}>
+          {ANGLES.map((angle, index) => (
+            <View
+              key={angle}
+              style={[
+                styles.progressDot,
+                index <= currentAngleIndex && styles.progressDotActive,
+                capturedImages[angle] && styles.progressDotDone,
+              ]}
+            >
+              <Text style={styles.progressDotText}>
+                {capturedImages[angle] ? "✓" : index + 1}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Step label */}
+        <View style={styles.stepLabel}>
+          <Text style={styles.stepText}>
+            Step {currentAngleIndex + 1} of 3 — {ANGLE_LABELS[currentAngle]}
+          </Text>
+        </View>
+
+        {/* Camera */}
         <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} facing="front" style={styles.camera}>
-            {/* Outline Guideline Ring */}
-            <View style={styles.overlayContainer}>
-              <View style={[styles.cutout, step === "left" && styles.cutoutLeft, step === "right" && styles.cutoutRight]} />
-            </View>
-          </CameraView>
-          
-          <TouchableOpacity 
-            activeOpacity={0.8} 
-            onPress={handleCapture} 
-            disabled={capturing}
-            style={styles.captureButton}
-          >
-            {capturing ? (
-              <ActivityIndicator color={COLORS.primary} size="small" />
-            ) : (
-              <View style={styles.captureInnerButton} />
-            )}
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.previewContainer}>
-          <View style={styles.grid}>
-            <View style={styles.previewBox}>
-              <Image source={{ uri: photos.front }} style={styles.previewImage} />
-              <Text style={styles.previewLabel}>Front</Text>
-            </View>
-            <View style={styles.previewBox}>
-              <Image source={{ uri: photos.left }} style={styles.previewImage} />
-              <Text style={styles.previewLabel}>Left Profile</Text>
-            </View>
-            <View style={styles.previewBox}>
-              <Image source={{ uri: photos.right }} style={styles.previewImage} />
-              <Text style={styles.previewLabel}>Right Profile</Text>
-            </View>
-          </View>
-
-          <Button
-            title="Register Face Data"
-            onPress={handleRegister}
-            loading={registering}
-            style={styles.actionButton}
-          />
-
-          <Button
-            title="Recapture Images"
-            onPress={handleReset}
-            variant="outline"
-            disabled={registering}
-            style={[styles.actionButton, { marginTop: 12 }] as any}
+          <CameraCapture
+            onCapture={handleCapture}
+            guideText={ANGLE_INSTRUCTIONS[currentAngle]}
+            angleGuide={currentAngle}
           />
         </View>
-      )}
-
-      {/* Progress dots */}
-      <View style={styles.progress}>
-        <View style={[styles.dot, photos.front ? styles.dotActive : null]} />
-        <View style={[styles.dot, photos.left ? styles.dotActive : null]} />
-        <View style={[styles.dot, photos.right ? styles.dotActive : null]} />
       </View>
-    </View>
+    );
+  }
+
+  // ── Render: Final Review (all 3 captured) ──────────────────────────────
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.reviewContent}
+    >
+      <Text style={styles.reviewTitle}>Review Your Photos</Text>
+      <Text style={styles.reviewSubtitle}>
+        Confirm all 3 angles are clear and well-lit before submitting.
+      </Text>
+
+      <View style={styles.imageGrid}>
+        {ANGLES.map((angle) => (
+          <View key={angle} style={styles.imageCard}>
+            {capturedImages[angle] && (
+              <Image
+                source={{ uri: capturedImages[angle]! }}
+                style={styles.gridImage}
+              />
+            )}
+            <Text style={styles.imageLabel}>{ANGLE_LABELS[angle]}</Text>
+            <TouchableOpacity
+              style={styles.retakeSmallBtn}
+              onPress={() => handleRetakeAngle(angle)}
+            >
+              <Text style={styles.retakeSmallBtnText}>Retake</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.submitBtn, isUploading && styles.submitBtnDisabled]}
+        onPress={handleUpload}
+        disabled={isUploading}
+      >
+        {isUploading ? (
+          <View style={styles.uploadingRow}>
+            <ActivityIndicator size="small" color="#FFF" />
+            <Text style={styles.submitBtnText}> Processing...</Text>
+          </View>
+        ) : (
+          <Text style={styles.submitBtnText}>🚀 Register My Face</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 24,
-    justifyContent: "space-between",
   },
-  loadingContainer: {
-    flex: 1,
+
+  // Progress bar
+  progressBar: {
+    flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
+    paddingTop: 56,
+    paddingBottom: 8,
+    gap: 16,
     backgroundColor: COLORS.background,
   },
-  permissionContainer: {
-    flex: 1,
+  progressDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    padding: 24,
   },
-  permissionText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 24,
+  progressDotActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: "rgba(74, 21, 75, 0.15)",
   },
-  permissionButton: {
-    maxWidth: 240,
+  progressDotDone: {
+    borderColor: COLORS.success,
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
   },
-  header: {
-    alignItems: "center",
-    marginTop: 40,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.primary,
-  },
-  subtitle: {
+  progressDotText: {
+    color: COLORS.text,
     fontSize: 14,
+    fontWeight: "700",
+  },
+
+  // Step label
+  stepLabel: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    backgroundColor: COLORS.background,
+  },
+  stepText: {
     color: COLORS.textSecondary,
-    marginTop: 6,
+    fontSize: 14,
     textAlign: "center",
   },
+
+  // Camera container
   cameraContainer: {
     flex: 1,
-    marginVertical: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  camera: {
-    width: "100%",
-    aspectRatio: 3 / 4,
-    borderRadius: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  overlayContainer: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+
+  // Review screen
+  reviewContent: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  cutout: {
-    width: 200,
-    height: 280,
-    borderRadius: 100,
-    borderWidth: 2.5,
-    borderColor: COLORS.primary,
-    backgroundColor: "transparent",
+  reviewTitle: {
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 8,
   },
-  cutoutLeft: {
-    borderColor: COLORS.secondary,
-    transform: [{ rotate: "15deg" }],
+  reviewSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 24,
   },
-  cutoutRight: {
-    borderColor: COLORS.accent,
-    transform: [{ rotate: "-15deg" }],
-  },
-  captureButton: {
-    position: "absolute",
-    bottom: 24,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 4,
-    borderColor: COLORS.white,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-  },
-  captureInnerButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: COLORS.white,
-  },
-  previewContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 24,
-  },
-  grid: {
+  imageGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  previewBox: {
+  imageCard: {
+    width: (SCREEN_WIDTH - 56) / 3,
     alignItems: "center",
-    flex: 1,
   },
-  previewImage: {
-    width: "90%",
-    aspectRatio: 1,
+  gridImage: {
+    width: (SCREEN_WIDTH - 56) / 3,
+    height: ((SCREEN_WIDTH - 56) / 3) * 1.33,
     borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    marginBottom: 8,
   },
-  previewLabel: {
+  imageLabel: {
     color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: "600",
-    marginTop: 8,
+    marginBottom: 4,
   },
-  actionButton: {
-    width: "100%",
+  retakeSmallBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: COLORS.surfaceDark,
   },
-  progress: {
+  retakeSmallBtnText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+
+  // Buttons
+  primaryBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  primaryBtnText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  submitBtn: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
+  },
+  submitBtnText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  uploadingRow: {
     flexDirection: "row",
+    alignItems: "center",
+  },
+
+  // Success screen
+  successContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  successIcon: {
+    fontSize: 64,
     marginBottom: 20,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 6,
+  successTitle: {
+    color: COLORS.success,
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: 12,
   },
-  dotActive: {
-    backgroundColor: COLORS.primary,
+  successText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 32,
   },
 });
+
 export default FaceRegistrationScreen;

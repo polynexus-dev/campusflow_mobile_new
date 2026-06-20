@@ -10,7 +10,6 @@ import { useAuthStore } from "@store/authStore";
 
 export const RegisterScreen: React.FC = () => {
   const router = useRouter();
-  const setCollegeDomain = useAuthStore((state) => state.setCollegeDomain);
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -21,7 +20,6 @@ export const RegisterScreen: React.FC = () => {
   const [studentId, setStudentId] = useState("");
   const [programEnrolledIn, setProgramEnrolledIn] = useState("");
   const [departmentId, setDepartmentId] = useState("");
-  const [collegeSubdomain, setCollegeSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -44,13 +42,6 @@ export const RegisterScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      // Configure dynamic tenant routing first
-      if (collegeSubdomain.trim()) {
-        const subdomain = collegeSubdomain.trim().toLowerCase();
-        const domain = subdomain.includes(".") ? subdomain : `${subdomain}.localhost:8000`;
-        setCollegeDomain(domain);
-      }
-
       await authApi.registerStudent({
         username,
         email,
@@ -95,13 +86,6 @@ export const RegisterScreen: React.FC = () => {
         </View>
 
         <View style={styles.card}>
-          <Input
-            label="College Subdomain (Optional)"
-            placeholder="e.g. mit, dy-patil"
-            value={collegeSubdomain}
-            onChangeText={setCollegeSubdomain}
-          />
-
           <View style={styles.row}>
             <Input
               label="First Name"
@@ -207,7 +191,7 @@ export const RegisterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary, // Deep purple brand background
   },
   scrollContent: {
     flexGrow: 1,
@@ -221,20 +205,25 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: COLORS.primary,
+    color: COLORS.white, // White contrast title
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: "rgba(255, 255, 255, 0.75)", // Soft translucent text
     marginTop: 4,
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    backgroundColor: COLORS.surface, // White card container
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
     marginBottom: 40,
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
   },
   row: {
     flexDirection: "row",
@@ -258,4 +247,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
 export default RegisterScreen;
