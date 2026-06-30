@@ -14,7 +14,11 @@ export const ROUTES = {
     ASSIGNMENT_DETAILS: "/(app)/assignments/[id]" as const,
     ATTENDANCE_HISTORY: "/(app)/attendance-history" as const,
     LECTURER_HISTORY: "/(app)/lecturer-history" as const,
+    BUS_TRACKING: "/(app)/bus-tracking" as const,
+    FEES: "/(app)/student-fees" as const,
   },
 } as const;
+
+
 
 export type RouteType = typeof ROUTES;

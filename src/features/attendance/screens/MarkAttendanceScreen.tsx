@@ -18,7 +18,8 @@ import { COLORS } from "@/shared/theme/colors";
 import { attendanceApi } from "../api/attendanceApi";
 import { CameraCapture } from "../components/CameraCapture";
 import { ROUTES } from "@/constants/route";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { useAuthStore } from "@store/authStore";
+import * as Location from "expo-location";
 
 type Lecture = {
   id: number;
@@ -58,11 +59,10 @@ export const MarkAttendanceScreen: React.FC = () => {
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // QR Fallback scanner states
-  const [showScanner, setShowScanner] = useState(false);
-  const [verifyingMode, setVerifyingMode] = useState<"face" | "qr" | null>(null);
-  const [permission, requestPermission] = useCameraPermissions();
-  const laserAnim = useRef(new Animated.Value(0)).current;
+  // Alphanumeric session code check-in states
+  const [checkInCode, setCheckInCode] = useState("");
+  const [verifyingMode, setVerifyingMode] = useState<"face" | "code" | null>(null);
+  const deviceId = useAuthStore((state) => state.deviceId);
 
   // Manual request override states
   const [manualRequestStatus, setManualRequestStatus] = useState<{
@@ -120,31 +120,6 @@ export const MarkAttendanceScreen: React.FC = () => {
     fetchLectures();
   }, [fetchLectures]);
 
-  // QR Scanning sweep laser animation loop
-  useEffect(() => {
-    if (showScanner) {
-      laserAnim.setValue(0);
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(laserAnim, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(laserAnim, {
-            toValue: 0,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      laserAnim.stopAnimation();
-    }
-  }, [showScanner]);
-
   const onRefresh = () => {
     setRefreshing(true);
     fetchLectures();
@@ -163,56 +138,56 @@ export const MarkAttendanceScreen: React.FC = () => {
     }
   };
 
-  // ── Open QR Code Scanner ───────────────────────────────────────────────
-  const handleOpenScanner = async () => {
+  // ── Verify session code and GPS boundaries ────────────────────────────
+  const handleCodeCheckIn = async () => {
     if (!selectedLecture) return;
-    if (!permission) {
-      Alert.alert("Error", "Camera driver not loaded yet. Please try again.");
+    if (!checkInCode.trim()) {
+      Alert.alert("Code Required", "Please enter the lecture attendance code.");
       return;
     }
-    if (!permission.granted) {
-      const res = await requestPermission();
-      if (!res.granted) {
-        Alert.alert("Permission Required", "Camera permission is required to scan the proximity QR code.");
-        return;
-      }
-    }
-    setShowScanner(true);
-  };
 
-  // ── Barcode scan handler ───────────────────────────────────────────────
-  const handleBarcodeScanned = async ({ data }: { data: string }) => {
-    if (isVerifying || !selectedLecture) return;
-
-    // Stop scanning immediately and set states
-    setShowScanner(false);
-    setVerifyingMode("qr");
     setIsVerifying(true);
+    setVerifyingMode("code");
 
     try {
-      const parsed = JSON.parse(data);
-      if (!parsed.lecture_id || !parsed.token) {
-        throw new Error("Invalid QR code format. Please scan a valid CampusFlow dynamic QR code.");
+      // Request location permissions
+      const { status: locStatus } = await Location.requestForegroundPermissionsAsync();
+      if (locStatus !== "granted") {
+        Alert.alert("Permission Required", "GPS Location access is required to verify your attendance within classroom geofence boundaries.");
+        setIsVerifying(false);
+        setVerifyingMode(null);
+        return;
       }
 
-      if (parsed.lecture_id !== selectedLecture.id) {
-        throw new Error("This QR code is for a different class session.");
-      }
+      // Fetch current GPS location
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
 
-      const response = await attendanceApi.studentVerifyQRAttendance(parsed.lecture_id, parsed.token);
+      const lat = loc.coords.latitude;
+      const lon = loc.coords.longitude;
+
+      const response = await attendanceApi.checkInByCode(
+        checkInCode.trim(),
+        lat,
+        lon,
+        deviceId || "Mobile App"
+      );
 
       setVerificationResult({
         success: true,
-        is_verified: response.is_verified ?? true,
+        is_verified: true,
         confidence_score: 1.0,
         liveness_passed: true,
-        message: response.message || "Proximity QR verified successfully! Attendance marked.",
+        message: response.detail || "Attendance marked successfully using lecture code!",
       });
       setAttendedIds((prev) => new Set([...prev, selectedLecture.id]));
     } catch (error: any) {
-      console.error("QR Code verification failed:", error);
-      let errorMsg = error.message || "Failed to verify QR Code. Please make sure the code is current and active.";
-      if (error.data?.error) {
+      console.error("Code check-in verification failed:", error);
+      let errorMsg = error.message || "Verification failed. Check if code is correct and you are inside the classroom.";
+      if (error.data?.detail) {
+        errorMsg = error.data.detail;
+      } else if (error.data?.error) {
         errorMsg = error.data.error;
       }
       setVerificationResult({
@@ -224,6 +199,7 @@ export const MarkAttendanceScreen: React.FC = () => {
       });
     } finally {
       setIsVerifying(false);
+      setCheckInCode("");
     }
   };
 
@@ -324,65 +300,7 @@ export const MarkAttendanceScreen: React.FC = () => {
     }
   };
 
-  // ── Render: Camera Scanner ─────────────────────────────────────────────
-  if (showScanner) {
-    const translateY = laserAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 250],
-    });
-
-    return (
-      <View style={styles.scannerContainer}>
-        <CameraView
-          style={StyleSheet.absoluteFill}
-          facing="back"
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-          onBarcodeScanned={handleBarcodeScanned}
-        />
-        
-        {/* Semi-transparent overlay with a transparent hole for the scanner */}
-        <View style={styles.overlayContainer}>
-          <View style={styles.overlayTop} />
-          <View style={styles.overlayMiddleRow}>
-            <View style={styles.overlaySide} />
-            <View style={styles.scannerCutout}>
-              {/* Corner brackets */}
-              <View style={[styles.corner, styles.topLeft]} />
-              <View style={[styles.corner, styles.topRight]} />
-              <View style={[styles.corner, styles.bottomLeft]} />
-              <View style={[styles.corner, styles.bottomRight]} />
-              
-              {/* Animated laser line */}
-              <Animated.View
-                style={[
-                  styles.laserLine,
-                  { transform: [{ translateY }] }
-                ]}
-              />
-            </View>
-            <View style={styles.overlaySide} />
-          </View>
-          <View style={styles.overlayBottom} />
-        </View>
-
-        {/* Text guidance and Cancel button */}
-        <View style={styles.scannerControls}>
-          <Text style={styles.scannerText}>
-            Align the rotating QR code on the lecturer's screen within the box to check in
-          </Text>
-          <TouchableOpacity
-            style={styles.cancelScannerBtn}
-            onPress={() => setShowScanner(false)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.cancelScannerBtnText}>✕ Close Scanner</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  // QR scanner has been permanently removed
 
   // ── Render: Camera ─────────────────────────────────────────────────────
   if (showCamera && challenge) {
@@ -406,11 +324,11 @@ export const MarkAttendanceScreen: React.FC = () => {
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.verifyingText}>
-          {verifyingMode === "qr" ? "Verifying Token..." : "Verifying your identity..."}
+          {verifyingMode === "code" ? "Verifying Code..." : "Verifying your identity..."}
         </Text>
         <Text style={styles.verifyingSubtext}>
-          {verifyingMode === "qr"
-            ? "Validating proximity QR fallback token"
+          {verifyingMode === "code"
+            ? "Validating lecture code & classroom geofence"
             : "Running face match & liveness check"}
         </Text>
       </View>
@@ -636,15 +554,27 @@ export const MarkAttendanceScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.qrScanBtn}
-                onPress={handleOpenScanner}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.qrScanBtnText}>
-                  📱 Scan Proximity QR Code
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.codeSection}>
+                <Text style={styles.codeSectionLabel}>Or Enter Session Code:</Text>
+                <View style={styles.codeInputRow}>
+                  <TextInput
+                    style={styles.codeInput}
+                    placeholder="e.g. 123456"
+                    placeholderTextColor="#94A3B8"
+                    value={checkInCode}
+                    onChangeText={setCheckInCode}
+                    autoCapitalize="characters"
+                    maxLength={10}
+                  />
+                  <TouchableOpacity
+                    style={styles.codeSubmitBtn}
+                    onPress={handleCodeCheckIn}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.codeSubmitBtnText}>Submit</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </>
           )}
 
@@ -1143,131 +1073,47 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   
-  // QR scanner styles
-  qrScanBtn: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 12,
+  // Code check-in styles
+  codeSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 16,
   },
-  qrScanBtnText: {
-    color: "#FFF",
-    fontSize: 18,
+  codeSectionLabel: {
+    fontSize: 14,
     fontWeight: "700",
+    color: COLORS.textSecondary,
+    marginBottom: 10,
   },
-  scannerContainer: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  overlayContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "space-between",
-  },
-  overlayTop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
-  },
-  overlayMiddleRow: {
+  codeInputRow: {
     flexDirection: "row",
-    height: 260,
+    gap: 12,
   },
-  overlaySide: {
+  codeInput: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
-  },
-  scannerCutout: {
-    width: 260,
-    height: 260,
-    backgroundColor: "transparent",
-    position: "relative",
-  },
-  overlayBottom: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
-  },
-  corner: {
-    position: "absolute",
-    width: 20,
-    height: 20,
-    borderColor: COLORS.secondary,
-    borderWidth: 0,
-  },
-  topLeft: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderTopLeftRadius: 8,
-  },
-  topRight: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-    borderTopRightRadius: 8,
-  },
-  bottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-    borderBottomLeftRadius: 8,
-  },
-  bottomRight: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-    borderBottomRightRadius: 8,
-  },
-  laserLine: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    height: 3,
-    backgroundColor: COLORS.secondary,
-    shadowColor: COLORS.secondary,
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  scannerControls: {
-    position: "absolute",
-    bottom: 40,
-    left: 20,
-    right: 20,
-    alignItems: "center",
-  },
-  scannerText: {
-    color: "#FFF",
-    fontSize: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 48,
+    color: COLORS.text,
+    fontSize: 16,
     fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 24,
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-    lineHeight: 20,
-    paddingHorizontal: 20,
   },
-  cancelScannerBtn: {
-    backgroundColor: "rgba(15, 23, 42, 0.85)",
-    paddingVertical: 12,
+  codeSubmitBtn: {
+    backgroundColor: COLORS.secondary,
+    borderRadius: 12,
     paddingHorizontal: 24,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  cancelScannerBtnText: {
+  codeSubmitBtnText: {
     color: "#FFF",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    letterSpacing: 0.5,
   },
 });
 

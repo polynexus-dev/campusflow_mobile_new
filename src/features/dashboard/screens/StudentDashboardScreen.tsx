@@ -301,6 +301,24 @@ export const StudentDashboardScreen: React.FC = () => {
             <Text style={styles.actionGridButtonIcon}>📋</Text>
             <Text style={styles.actionGridButtonText}>My Attendance</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
+            style={[styles.actionGridButton, { backgroundColor: '#EAB308' }]}
+          >
+            <Text style={styles.actionGridButtonIcon}>🚌</Text>
+            <Text style={styles.actionGridButtonText}>Bus Tracking & QR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push(ROUTES.APP.FEES)}
+            style={[styles.actionGridButton, { backgroundColor: '#10B981' }]}
+          >
+            <Text style={styles.actionGridButtonIcon}>💳</Text>
+            <Text style={styles.actionGridButtonText}>My Fees & Receipts</Text>
+          </TouchableOpacity>
         </View>
       </View>
 

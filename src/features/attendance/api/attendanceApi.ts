@@ -132,17 +132,14 @@ export const attendanceApi = {
     return response.data;
   },
 
-  getLecturerDynamicQR: async (lectureId: number) => {
-    const response = await httpClient.get(`/lecturer/generate-dynamic-qr/?lecture_id=${lectureId}`);
-    return response.data;
-  },
-
-  studentVerifyQRAttendance: async (lectureId: number, token: string, deviceId?: string) => {
-    const response = await httpClient.post("/student/verify-qr-attendance/", {
-      lecture_id: lectureId,
-      token,
+  checkInByCode: async (code: string, latitude: number, longitude: number, deviceId: string) => {
+    const response = await httpClient.post("/attendance/lecture-checkin/", {
+      code,
+      latitude,
+      longitude,
       device_id: deviceId
     });
     return response.data;
   },
 };
+

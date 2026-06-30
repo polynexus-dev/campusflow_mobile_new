@@ -83,12 +83,6 @@ export const LecturerDashboardScreen: React.FC = () => {
   const [loadingDeviceResets, setLoadingDeviceResets] = useState(false);
   const [deviceResetsModalVisible, setDeviceResetsModalVisible] = useState(false);
 
-  // Dynamic Rotating QR Code states
-  const [qrModalVisible, setQrModalVisible] = useState(false);
-  const [activeQrLecture, setActiveQrLecture] = useState<Lecture | null>(null);
-  const [qrImage, setQrImage] = useState<string | null>(null);
-  const [qrExpiresIn, setQrExpiresIn] = useState<number>(0);
-
   const isHodOrAdmin = user?.role === "Department Head" || user?.role === "Management" || user?.role === "Administrator";
 
   const parseDateSafe = (dateStr: string) => {
@@ -388,42 +382,6 @@ export const LecturerDashboardScreen: React.FC = () => {
     }
   };
 
-  const fetchNextQrFrame = useCallback(async (lectureId: number) => {
-    try {
-      const data = await attendanceApi.getLecturerDynamicQR(lectureId);
-      setQrImage(data.qr_image);
-      setQrExpiresIn(data.expires_in);
-    } catch (err: any) {
-      console.error("Failed to fetch QR frame:", err);
-      setQrModalVisible(false);
-      Alert.alert("QR Code Expired", "Attendance session is no longer active.");
-    }
-  }, []);
-
-  const handleOpenQrCode = (lecture: Lecture) => {
-    setActiveQrLecture(lecture);
-    setQrImage(null);
-    setQrExpiresIn(0);
-    setQrModalVisible(true);
-    fetchNextQrFrame(lecture.id);
-  };
-
-  useEffect(() => {
-    if (!qrModalVisible || !activeQrLecture) return;
-
-    const intervalId = setInterval(() => {
-      setQrExpiresIn((prev) => {
-        if (prev <= 1) {
-          fetchNextQrFrame(activeQrLecture.id);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [qrModalVisible, activeQrLecture, fetchNextQrFrame]);
-
   const handleLogout = async () => {
     Alert.alert("Sign Out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
@@ -511,6 +469,22 @@ export const LecturerDashboardScreen: React.FC = () => {
             <Text style={styles.historyCardArrow}>❯</Text>
           </TouchableOpacity>
         )}
+
+        {/* Conductor Bus Tracking Card Link */}
+        <TouchableOpacity
+          style={[styles.historyCardLink, { backgroundColor: "#EAB308", marginTop: -12 }]}
+          onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.historyCardContent}>
+            <Text style={styles.historyCardEmoji}>🚌</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.historyCardTitle}>Bus Route Conductor Panel</Text>
+              <Text style={styles.historyCardSubtitle}>Start live GPS stream and track stop passenger tallies</Text>
+            </View>
+          </View>
+          <Text style={styles.historyCardArrow}>❯</Text>
+        </TouchableOpacity>
 
         {/* Section title */}
         <Text style={styles.sectionTitle}>Today's Lectures</Text>
@@ -607,14 +581,11 @@ export const LecturerDashboardScreen: React.FC = () => {
                     </TouchableOpacity>
                   )}
 
-                  {/* Step 3: Show QR Code when session is active */}
+                  {/* Step 3: Show Lecture Code to students */}
                   {statusItem.is_checked_in && statusItem.session_active && (
-                    <TouchableOpacity
-                      style={[styles.primaryBtn, { backgroundColor: "#8B5CF6" }]}
-                      onPress={() => handleOpenQrCode(lec)}
-                    >
-                      <Text style={styles.btnText}>📱 Show QR Code</Text>
-                    </TouchableOpacity>
+                    <View style={[styles.primaryBtn, { backgroundColor: "#1D4ED8", flexDirection: "row", gap: 6 }]}>
+                      <Text style={styles.btnText}>🔑 Code: {statusItem.code || "..."}</Text>
+                    </View>
                   )}
                 </View>
 
@@ -872,38 +843,6 @@ export const LecturerDashboardScreen: React.FC = () => {
         </View>
       </Modal>
 
-      {/* MODAL 4: Dynamic Rotating QR Code Generator */}
-      <Modal visible={qrModalVisible} animationType="fade" transparent={true}>
-        <View style={styles.modalBgCentered}>
-          <View style={styles.qrModalContent}>
-            <View style={styles.qrModalHeader}>
-              <Text style={styles.qrModalTitle}>Dynamic Check-In QR</Text>
-              <TouchableOpacity onPress={() => setQrModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.qrModalDescription}>
-              Have students scan this screen. The code rotates every 15 seconds to prevent proxy attendance.
-            </Text>
-
-            <View style={styles.qrContainer}>
-              {qrImage ? (
-                <Image source={{ uri: qrImage }} style={styles.qrImage} />
-              ) : (
-                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginVertical: 60 }} />
-              )}
-            </View>
-
-            <View style={styles.timerContainer}>
-              <Text style={styles.timerText}>Code rotates in: {qrExpiresIn}s</Text>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${(qrExpiresIn / 15) * 100}%` }]} />
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };

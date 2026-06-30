@@ -13,6 +13,9 @@ export default function AppLayout() {
       <Stack.Screen name="timetable" />
       <Stack.Screen name="assignments/index" />
       <Stack.Screen name="assignments/[id]" />
+      <Stack.Screen name="bus-tracking" />
+      <Stack.Screen name="student-fees" />
     </Stack>
   );
 }
+
