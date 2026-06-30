@@ -12,6 +12,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { busApi, LiveBusData } from "../services/busApi";
 import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
+import { BusMap } from "../components/BusMap";
 
 export const StudentBusScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -125,6 +126,16 @@ export const StudentBusScreen: React.FC = () => {
           <Text style={styles.coords}>
             Last seen GPS: {bus.lat.toFixed(5)}, {bus.lng.toFixed(5)} ({new Date(bus.last_seen).toLocaleTimeString()})
           </Text>
+
+          {/* Live Bus Map */}
+          {bus.route?.stops && (
+            <View style={{ marginVertical: 12 }}>
+              <BusMap 
+                stops={bus.route.stops.map(s => ({ name: s.name, lat: s.lat, lng: s.lng }))} 
+                busLocation={{ lat: bus.lat, lng: bus.lng }} 
+              />
+            </View>
+          )}
 
           {/* Stops List Timeline */}
           {bus.route?.stops && (
