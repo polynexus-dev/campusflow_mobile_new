@@ -229,7 +229,7 @@ export const StudentDashboardScreen: React.FC = () => {
             <View style={styles.statusBadgeGreen}>
               <Text style={styles.statusBadgeTextGreen}>✓ Biometrics Active</Text>
             </View>
-            
+
             {resetRequest ? (
               <View style={[
                 styles.requestBadge,

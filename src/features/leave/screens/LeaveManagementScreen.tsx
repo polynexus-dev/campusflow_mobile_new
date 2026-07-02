@@ -22,6 +22,11 @@ export const LeaveManagementScreen: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const isStudent = user?.student_profile !== undefined;
   const isFacultyOrAbove = user?.role !== "Student";
+  const canApproveLeave =
+    user?.role === "Department Head" ||
+    user?.role === "Management" ||
+    user?.role === "Administrator" ||
+    user?.role === "SaaS Admin";
 
   // Data States
   const [balances, setBalances] = useState<any[]>([]);
@@ -56,7 +61,7 @@ export const LeaveManagementScreen: React.FC = () => {
       setMyLeaves(myLeavesData);
       setLeaveTypes(typesData);
 
-      if (isFacultyOrAbove) {
+      if (canApproveLeave) {
         const pendingData = await leaveApi.getPendingRequests().catch(() => []);
         setPendingRequests(pendingData);
       }
@@ -195,7 +200,7 @@ export const LeaveManagementScreen: React.FC = () => {
         >
           <Text style={[styles.tabText, activeTab === "apply" && styles.activeTabText]}>Apply Leave</Text>
         </TouchableOpacity>
-        {isFacultyOrAbove && (
+        {canApproveLeave && (
           <TouchableOpacity
             style={[styles.tab, activeTab === "approve" && styles.activeTab]}
             onPress={() => setActiveTab("approve")}
@@ -317,8 +322,8 @@ export const LeaveManagementScreen: React.FC = () => {
             </View>
           )}
 
-          {/* TAB 3: APPROVALS (FACULTY/ADMIN ONLY) */}
-          {activeTab === "approve" && isFacultyOrAbove && (
+          {/* TAB 3: APPROVALS (HOD/ADMIN ONLY) */}
+          {activeTab === "approve" && canApproveLeave && (
             <View>
               <Text style={styles.sectionTitle}>Pending Applications</Text>
               {pendingRequests.length === 0 ? (

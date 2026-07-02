@@ -1,3 +1,4 @@
+import React from "react";
 import { AssignmentsListScreen } from "@/features/assignments/screens/AssignmentsListScreen";
 
 export default function AssignmentsListRoute() {

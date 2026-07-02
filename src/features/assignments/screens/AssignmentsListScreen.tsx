@@ -81,7 +81,7 @@ export const AssignmentsListScreen: React.FC = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.card}
-                onPress={() => router.push(`/(app)/assignments/${item.id}`)}
+                onPress={() => router.push(`/(student)/assignments/${item.id}`)}
               >
                 <View style={styles.cardHeader}>
                   <Text style={styles.courseTag}>{item.course_code}</Text>

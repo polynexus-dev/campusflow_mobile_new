@@ -83,7 +83,11 @@ export const LecturerDashboardScreen: React.FC = () => {
   const [loadingDeviceResets, setLoadingDeviceResets] = useState(false);
   const [deviceResetsModalVisible, setDeviceResetsModalVisible] = useState(false);
 
-  const isHodOrAdmin = user?.role === "Department Head" || user?.role === "Management" || user?.role === "Administrator";
+  const isHodOrAdmin =
+    user?.role === "Department Head" ||
+    user?.role === "Management" ||
+    user?.role === "Administrator" ||
+    user?.role === "SaaS Admin";
 
   const parseDateSafe = (dateStr: string) => {
     if (!dateStr) return new Date(NaN);

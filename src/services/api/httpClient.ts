@@ -1,6 +1,8 @@
 import axios from "axios";
 import { buildUrl } from "./buildUrl";
 import { useAuthStore } from "@store/authStore";
+import { ApiError } from "@/errors/ApiError";
+import { logError } from "@/errors/errorHandler";
 
 export const httpClient = axios.create({
   timeout: 15000,
@@ -40,31 +42,35 @@ httpClient.interceptors.request.use(
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    let normalizedError = {
-      message: "An unexpected error occurred.",
-      status: error.response?.status,
-      data: error.response?.data,
-    };
+    const statusCode: number = error?.response?.status ?? 500;
+    const endpoint: string = error?.config?.url ?? "unknown";
+    let message = "An unexpected error occurred.";
 
     if (error.response) {
       const data = error.response.data;
       if (data && typeof data === "object") {
-        if (data.error) normalizedError.message = data.error;
-        else if (data.detail) normalizedError.message = data.detail;
-        else if (data.message) normalizedError.message = data.message;
+        if (data.error) message = data.error;
+        else if (data.detail) message = data.detail;
+        else if (data.message) message = data.message;
         else {
           // Flatten standard DRF serializer errors
           const values = Object.values(data);
           if (values.length > 0) {
-            normalizedError.message = String(values[0]);
+            message = String(values[0]);
           }
         }
       }
     } else if (error.request) {
-      normalizedError.message = "No response received from the server. Check your network connection.";
+      message = "No response received from the server. Check your network connection.";
+    } else if (error.message) {
+      message = error.message;
     }
 
-    return Promise.reject(normalizedError);
+    const responseData = error?.response?.data;
+    const apiError = ApiError.fromResponse(statusCode, message, endpoint, responseData);
+    logError(apiError, `httpClient:response [${endpoint}]`);
+
+    return Promise.reject(apiError);
   }
 );
 export default httpClient;

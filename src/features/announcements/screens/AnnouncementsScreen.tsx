@@ -21,7 +21,10 @@ import { ROUTES } from "@/constants/route";
 export const AnnouncementsScreen: React.FC = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const isFacultyOrAbove = user?.role !== "Student";
+  const isSaaSOrCollegeAdmin =
+    user?.role === "SaaS Admin" ||
+    user?.role === "Management" ||
+    user?.role === "Administrator";
 
   // Data States
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -157,7 +160,7 @@ export const AnnouncementsScreen: React.FC = () => {
             <Text style={styles.title}>Notice Board</Text>
             <Text style={styles.subtitle}>Official updates & campus announcements</Text>
           </View>
-          {isFacultyOrAbove && (
+          {isSaaSOrCollegeAdmin && (
             <TouchableOpacity
               style={styles.composeBtn}
               onPress={() => setCreateModalVisible(true)}
@@ -523,7 +526,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 17,
-    fontWeight: "850",
+    fontWeight: "800",
     color: COLORS.text,
     marginBottom: 8,
   },

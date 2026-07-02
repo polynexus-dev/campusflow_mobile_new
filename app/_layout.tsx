@@ -20,14 +20,14 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAppGroup = segments[0] === "(app)";
+    const inAppGroup = segments[0] === "(student)";
 
     if (!isAuthenticated && inAppGroup) {
       // Redirect to login if accessing app route while unauthenticated
       router.replace("/(auth)/login");
     } else if (isAuthenticated && !inAppGroup) {
       // Redirect to dashboard if logged in and accessing auth route
-      router.replace("/(app)/dashboard");
+      router.replace("/(student)/(tabs)/dashboard");
     }
   }, [isAuthenticated, isLoading, segments]);
 
@@ -42,7 +42,7 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
       <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(app)" />
+      <Stack.Screen name="(student)" />
     </Stack>
   );
 }

@@ -13,6 +13,8 @@ import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
 import httpClient from "@services/api/httpClient";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+import { logError } from "@/errors/errorHandler";
 
 interface ProfileData {
   user?: {
@@ -49,7 +51,7 @@ export const ProfileScreen: React.FC = () => {
         const response = await httpClient.get("/user/");
         setProfile(response.data);
       } catch (err: any) {
-        console.error("Failed to load profile", err);
+        logError(err, "ProfileScreen:fetchProfile");
         // Fall back to local store data
         setProfile(null);
       } finally {
@@ -109,11 +111,13 @@ export const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Dashboard</Text>
-      </TouchableOpacity>
+    <ScreenWrapper
+      title="Profile"
+      showHeader
+      showBack
+      scrollable
+      contentContainerStyle={styles.content}
+    >
 
       {/* Profile Header Card */}
       <View style={styles.profileCard}>
@@ -191,7 +195,7 @@ export const ProfileScreen: React.FC = () => {
       </TouchableOpacity>
 
       <View style={{ height: 40 }} />
-    </ScrollView>
+    </ScreenWrapper>
   );
 };
 
