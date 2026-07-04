@@ -1,12 +1,83 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
 import { authApi } from "../api/authApi";
 import { ROUTES } from "@/constants/route";
-import { useAuthStore } from "@store/authStore";
+import { Feather } from "@expo/vector-icons";
+
+interface CustomInputProps {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  icon: keyof typeof Feather.glyphMap;
+  secureTextEntry?: boolean;
+  error?: string;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  style?: any;
+}
+
+const CustomInput: React.FC<CustomInputProps> = ({
+  label,
+  placeholder,
+  value,
+  onChangeText,
+  icon,
+  secureTextEntry = false,
+  error,
+  autoCapitalize = "none",
+  keyboardType = "default",
+  style,
+}) => {
+  const [isSecure, setIsSecure] = useState(secureTextEntry);
+
+  return (
+    <View style={[styles.inputWrapper, style]}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <View
+        style={[
+          styles.inputContainer,
+          error ? styles.inputContainerError : null,
+        ]}
+      >
+        <Feather
+          name={icon}
+          size={18}
+          color={COLORS.primary}
+          style={styles.inputLeftIcon}
+        />
+        <TextInput
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.textMuted}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={isSecure}
+          autoCapitalize={autoCapitalize}
+          keyboardType={keyboardType}
+          style={styles.textInput}
+        />
+        {secureTextEntry && (
+          <TouchableOpacity
+            onPress={() => setIsSecure(!isSecure)}
+            activeOpacity={0.7}
+            style={styles.inputRightIcon}
+          >
+            <Feather
+              name={isSecure ? "eye-off" : "eye"}
+              size={18}
+              color={COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+      {error && <Text style={styles.inputErrorText}>{error}</Text>}
+    </View>
+  );
+};
 
 export const RegisterScreen: React.FC = () => {
   const router = useRouter();
@@ -76,92 +147,107 @@ export const RegisterScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
+      <StatusBar style="light" />
+      
+      {/* Ambient background glow elements for a premium layout feel */}
+      <View style={styles.glowTopRight} />
+      <View style={styles.glowBottomLeft} />
+
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Register as a CampusFlow Student</Text>
+          <Text style={styles.subtitle}>Register as a CampusNexus Student</Text>
         </View>
 
         <View style={styles.card}>
           <View style={styles.row}>
-            <Input
+            <CustomInput
               label="First Name"
               placeholder="John"
               value={firstName}
               onChangeText={setFirstName}
+              icon="user"
               style={{ flex: 1, marginRight: 8 }}
             />
-            <Input
+            <CustomInput
               label="Last Name"
               placeholder="Doe"
               value={lastName}
               onChangeText={setLastName}
+              icon="user"
               style={{ flex: 1, marginLeft: 8 }}
             />
           </View>
 
-          <Input
+          <CustomInput
             label="Username"
             placeholder="johndoe"
             value={username}
             onChangeText={setUsername}
+            icon="user"
             error={errors.username}
           />
 
-          <Input
+          <CustomInput
             label="Email Address"
             placeholder="john.doe@college.edu.in"
             value={email}
             onChangeText={setEmail}
+            icon="mail"
             keyboardType="email-address"
             error={errors.email}
           />
 
-          <Input
+          <CustomInput
             label="Student ID"
             placeholder="e.g. STU123"
             value={studentId}
             onChangeText={setStudentId}
+            icon="credit-card"
             error={errors.studentId}
           />
 
           <View style={styles.row}>
-            <Input
+            <CustomInput
               label="Department ID"
               placeholder="e.g. 1"
               value={departmentId}
               onChangeText={setDepartmentId}
+              icon="grid"
               keyboardType="numeric"
               style={{ flex: 1, marginRight: 8 }}
               error={errors.departmentId}
             />
-            <Input
+            <CustomInput
               label="Program ID"
               placeholder="e.g. CS"
               value={programEnrolledIn}
               onChangeText={setProgramEnrolledIn}
+              icon="award"
               style={{ flex: 1, marginLeft: 8 }}
               error={errors.programEnrolledIn}
             />
           </View>
 
-          <Input
+          <CustomInput
             label="Password"
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
+            icon="lock"
             secureTextEntry
             error={errors.password}
           />
 
-          <Input
+          <CustomInput
             label="Confirm Password"
             placeholder="••••••••"
             value={password2}
             onChangeText={setPassword2}
+            icon="lock"
             secureTextEntry
             error={errors.password2}
           />
@@ -192,11 +278,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.primary, // Deep purple brand background
+    position: "relative",
+  },
+  glowTopRight: {
+    position: "absolute",
+    top: -100,
+    right: -100,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: COLORS.secondary,
+    opacity: 0.15,
+    zIndex: -1,
+  },
+  glowBottomLeft: {
+    position: "absolute",
+    bottom: -120,
+    left: -120,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: COLORS.accent,
+    opacity: 0.18,
+    zIndex: -1,
   },
   scrollContent: {
     flexGrow: 1,
     padding: 24,
-    paddingTop: 48,
+    paddingTop: Platform.OS === "ios" ? 64 : 48,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
@@ -204,47 +314,104 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "800",
-    color: COLORS.white, // White contrast title
+    fontWeight: "900",
+    color: COLORS.white,
+    letterSpacing: 1.2,
   },
   subtitle: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.75)", // Soft translucent text
-    marginTop: 4,
+    color: "rgba(255, 255, 255, 0.7)",
+    marginTop: 6,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   card: {
-    backgroundColor: COLORS.surface, // White card container
-    borderRadius: 24,
+    backgroundColor: COLORS.surface,
+    borderRadius: 28,
     padding: 24,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    marginBottom: 40,
-    elevation: 12,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    marginBottom: 20,
   },
   row: {
     flexDirection: "row",
     width: "100%",
   },
+  inputWrapper: {
+    marginBottom: 18,
+    width: "100%",
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  inputContainer: {
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputContainerError: {
+    borderColor: COLORS.error,
+  },
+  inputLeftIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    height: "100%",
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "500",
+    padding: 0,
+  },
+  inputRightIcon: {
+    paddingVertical: 10,
+    paddingLeft: 10,
+  },
+  inputErrorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 6,
+    marginLeft: 4,
+  },
   button: {
-    marginTop: 12,
+    marginTop: 8,
+    borderRadius: 14,
+    height: 54,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 24,
   },
   footerText: {
     color: COLORS.textSecondary,
     fontSize: 14,
+    fontWeight: "500",
   },
   footerLink: {
     color: COLORS.primary,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
 

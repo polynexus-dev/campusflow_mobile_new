@@ -78,7 +78,7 @@ export const StudentBusScreen: React.FC = () => {
         />
         <View style={styles.scannerOverlay}>
           <Text style={styles.scannerText}>Point camera at the QR inside the bus door</Text>
-          <TouchableOpacity style={styles.cancelBtn} onClick={() => setShowScanner(false)}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowScanner(false)}>
             <Text style={styles.cancelBtnText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -102,7 +102,7 @@ export const StudentBusScreen: React.FC = () => {
         <Text style={styles.scanCardText}>
           Scan the printed QR code placed inside your college bus to record attendance and verify your active pass.
         </Text>
-        <TouchableOpacity style={styles.scanBtn} onClick={handleScanQR}>
+        <TouchableOpacity style={styles.scanBtn} onPress={handleScanQR}>
           <Text style={styles.scanBtnText}>📷 Open QR Scanner</Text>
         </TouchableOpacity>
       </View>

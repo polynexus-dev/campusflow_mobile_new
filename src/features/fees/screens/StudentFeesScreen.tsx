@@ -28,8 +28,7 @@ export const StudentFeesScreen: React.FC = () => {
       setInvoices(invs);
       setPayments(pmts);
     } catch (err: any) {
-      console.error(err);
-      Alert.alert("Error", "Failed to load fee information.");
+      console.error("Failed to load fee information:", err);
     } finally {
       setLoading(false);
     }
@@ -126,13 +125,13 @@ export const StudentFeesScreen: React.FC = () => {
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "dues" && styles.activeTabButton]}
-          onClick={() => setActiveTab("dues")}
+          onPress={() => setActiveTab("dues")}
         >
           <Text style={[styles.tabText, activeTab === "dues" && styles.activeTabText]}>Dues & Invoices</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "receipts" && styles.activeTabButton]}
-          onClick={() => setActiveTab("receipts")}
+          onPress={() => setActiveTab("receipts")}
         >
           <Text style={[styles.tabText, activeTab === "receipts" && styles.activeTabText]}>Receipt History</Text>
         </TouchableOpacity>

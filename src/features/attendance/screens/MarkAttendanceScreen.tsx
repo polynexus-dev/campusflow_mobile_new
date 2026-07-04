@@ -109,7 +109,6 @@ export const MarkAttendanceScreen: React.FC = () => {
       setAttendedIds(ids);
     } catch (error) {
       console.error("Failed to fetch lectures:", error);
-      Alert.alert("Error", "Failed to load lectures. Pull down to refresh.");
     } finally {
       setIsLoadingLectures(false);
       setRefreshing(false);

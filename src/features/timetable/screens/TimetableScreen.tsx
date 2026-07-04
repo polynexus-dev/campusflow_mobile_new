@@ -28,7 +28,7 @@ export const TimetableScreen: React.FC = () => {
         const data = await timetableApi.getSchedules();
         setSchedules(data);
       } catch (err: any) {
-        Alert.alert("Error Loading Timetable", err.message || "Failed to load class schedules.");
+        console.error("Error Loading Timetable:", err);
       } finally {
         setLoading(false);
       }

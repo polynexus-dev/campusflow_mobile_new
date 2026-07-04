@@ -57,7 +57,6 @@ export const AnnouncementsScreen: React.FC = () => {
       setAnnouncements(items);
     } catch (err: any) {
       console.error("Failed to fetch announcements:", err);
-      Alert.alert("Error Loading Announcements", err.message || "Failed to load feed.");
     } finally {
       setLoading(false);
       setRefreshing(false);

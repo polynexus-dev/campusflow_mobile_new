@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
@@ -7,6 +7,7 @@ import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
 import { timetableApi } from "@/features/timetable/api/timetableApi";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
+import { Feather } from "@expo/vector-icons";
 
 export const StudentDashboardScreen: React.FC = () => {
   const router = useRouter();
@@ -15,6 +16,7 @@ export const StudentDashboardScreen: React.FC = () => {
 
   const [todayClasses, setTodayClasses] = useState<any[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [resetRequest, setResetRequest] = useState<{ status: string } | null>(null);
 
   const parseDateSafe = (dateStr: string) => {
     if (!dateStr) return new Date(NaN);
@@ -69,6 +71,8 @@ export const StudentDashboardScreen: React.FC = () => {
     }
   };
 
+  const isFaceRegistered = user?.student_profile?.is_face_registered ?? false;
+
   useEffect(() => {
     const fetchTodayClasses = async () => {
       setLoadingClasses(true);
@@ -77,13 +81,11 @@ export const StudentDashboardScreen: React.FC = () => {
         const todayStr = days[new Date().getDay()];
         const todayDate = new Date();
 
-        // 1. Fetch schedules & lectures in parallel
         const [schedulesData, lecturesData] = await Promise.all([
           timetableApi.getSchedules(),
           attendanceApi.getLectures().catch(() => [])
         ]);
 
-        // 2. Filter today's schedules
         const filteredSchedules = (schedulesData || [])
           .filter((s: any) => s.day_of_week === todayStr)
           .map((s: any) => ({
@@ -91,7 +93,6 @@ export const StudentDashboardScreen: React.FC = () => {
             type: "schedule",
           }));
 
-        // 3. Filter today's lectures (matching local date)
         const rawLectures = Array.isArray(lecturesData) ? lecturesData : (lecturesData.results || []);
         const filteredLectures = rawLectures
           .filter((l: any) => {
@@ -114,7 +115,6 @@ export const StudentDashboardScreen: React.FC = () => {
             code: l.code
           }));
 
-        // 4. Sort and merge
         const getMinutes = (timeStr: string) => {
           if (timeStr.includes("T")) {
             const d = parseDateSafe(timeStr);
@@ -136,24 +136,6 @@ export const StudentDashboardScreen: React.FC = () => {
     };
     fetchTodayClasses();
   }, []);
-
-  const handleLogout = async () => {
-    Alert.alert("Sign Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
-          router.replace(ROUTES.AUTH.LOGIN);
-        },
-      },
-    ]);
-  };
-
-  const [resetRequest, setResetRequest] = useState<{ status: string } | null>(null);
-
-  const isFaceRegistered = user?.student_profile?.is_face_registered ?? false;
 
   useEffect(() => {
     const checkResetRequest = async () => {
@@ -183,11 +165,10 @@ export const StudentDashboardScreen: React.FC = () => {
           text: "Request Reset",
           onPress: async () => {
             try {
-              const res = await attendanceApi.requestBiometricReset();
-              Alert.alert("Success", res.message || "Reset request submitted successfully.");
+              await attendanceApi.requestBiometricReset();
               setResetRequest({ status: "pending" });
             } catch (err: any) {
-              Alert.alert("Request Failed", err.message || err.data?.error || "Failed to submit request.");
+              console.error("Failed to submit biometric reset request:", err);
             }
           }
         }
@@ -195,36 +176,70 @@ export const StudentDashboardScreen: React.FC = () => {
     );
   };
 
+  const handleLogout = async () => {
+    Alert.alert("Sign Out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace(ROUTES.AUTH.LOGIN);
+        },
+      },
+    ]);
+  };
+
   const userInitials = (user?.username || "S")[0].toUpperCase();
+
+  // Get nice dynamic date format for the header
+  const getHeaderDate = () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header section */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.userName}>{user?.username || "Student"}</Text>
+        <View style={styles.headerMain}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.userName} numberOfLines={1}>{user?.username || "Student"}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileAvatarBtn} onPress={() => router.push(ROUTES.APP.PROFILE)}>
+            <Text style={styles.profileAvatarText}>{userInitials}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.profileAvatarBtn} onPress={() => router.push(ROUTES.APP.PROFILE)}>
-          <Text style={styles.profileAvatarText}>{userInitials}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerBottom}>
+          <Feather name="calendar" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={styles.dateText}>{getHeaderDate()}</Text>
+        </View>
       </View>
 
-      {/* Biometrics Status Card */}
+      {/* Biometrics Status Notification */}
       {!isFaceRegistered ? (
-        <View style={[styles.card, styles.warningCard]}>
-          <Text style={styles.cardTitle}>Biometrics Required</Text>
-          <Text style={styles.cardText}>
-            You must register your face from 3 separate angles before marking attendance.
-          </Text>
-          <Button
-            title="Register Face Data"
+        <View style={styles.biometricWarningBanner}>
+          <View style={styles.bannerIconWrapper}>
+            <Feather name="shield" size={20} color="#EA580C" />
+          </View>
+          <View style={styles.bannerTextWrapper}>
+            <Text style={styles.bannerTitle}>Biometrics Required</Text>
+            <Text style={styles.bannerText}>
+              Register your face from 3 angles to enable mobile attendance.
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.bannerActionBtn} 
             onPress={() => router.push(ROUTES.APP.REGISTER_FACE)}
-            style={styles.cardButton}
-          />
+          >
+            <Text style={styles.bannerActionBtnText}>Register</Text>
+          </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.compactSuccessBanner}>
+        <View style={styles.biometricSuccessBanner}>
           <View style={styles.compactRow}>
             <View style={styles.statusBadgeGreen}>
               <Text style={styles.statusBadgeTextGreen}>✓ Biometrics Active</Text>
@@ -261,139 +276,173 @@ export const StudentDashboardScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Quick Actions Grid */}
+      {/* Portal Hub Quick Actions Grid */}
       <View style={styles.actionSection}>
         <Text style={styles.sectionTitle}>Portal Hub</Text>
         <View style={styles.actionGrid}>
+          {/* Action 1: Mark Attendance */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             disabled={!isFaceRegistered}
             onPress={() => router.push(ROUTES.APP.MARK_ATTENDANCE)}
-            style={[styles.actionGridButton, !isFaceRegistered && styles.disabledBtn, { backgroundColor: COLORS.primary }]}
+            style={[
+              styles.actionGridCard,
+              !isFaceRegistered && styles.disabledBtn,
+              { borderColor: "rgba(74, 21, 75, 0.2)" }
+            ]}
           >
-            <Text style={styles.actionGridButtonIcon}>📸</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(74, 21, 75, 0.08)" }]}>
+              <Feather name="camera" size={22} color={COLORS.primary} />
+            </View>
             <Text style={styles.actionGridButtonText}>Mark Attendance</Text>
           </TouchableOpacity>
 
+          {/* Action 2: Timetable */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => router.push(ROUTES.APP.TIMETABLE)}
-            style={[styles.actionGridButton, { backgroundColor: COLORS.accent }]}
+            style={[styles.actionGridCard, { borderColor: "rgba(97, 31, 105, 0.2)" }]}
           >
-            <Text style={styles.actionGridButtonIcon}>📅</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(97, 31, 105, 0.08)" }]}>
+              <Feather name="calendar" size={22} color={COLORS.accent} />
+            </View>
             <Text style={styles.actionGridButtonText}>Timetable</Text>
           </TouchableOpacity>
 
+          {/* Action 3: Assignments */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => router.push(ROUTES.APP.ASSIGNMENTS)}
-            style={[styles.actionGridButton, { backgroundColor: COLORS.secondary }]}
+            style={[styles.actionGridCard, { borderColor: "rgba(124, 48, 133, 0.2)" }]}
           >
-            <Text style={styles.actionGridButtonIcon}>📝</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(124, 48, 133, 0.08)" }]}>
+              <Feather name="edit-3" size={22} color={COLORS.secondary} />
+            </View>
             <Text style={styles.actionGridButtonText}>Assignments</Text>
           </TouchableOpacity>
 
+          {/* Action 4: My Attendance */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => router.push(ROUTES.APP.ATTENDANCE_HISTORY)}
-            style={[styles.actionGridButton, { backgroundColor: '#7C3AED' }]}
+            style={[styles.actionGridCard, { borderColor: "rgba(124, 58, 237, 0.2)" }]}
           >
-            <Text style={styles.actionGridButtonIcon}>📋</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(124, 58, 237, 0.08)" }]}>
+              <Feather name="clipboard" size={22} color="#7C3AED" />
+            </View>
             <Text style={styles.actionGridButtonText}>My Attendance</Text>
           </TouchableOpacity>
 
+          {/* Action 5: Bus Tracking */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
-            style={[styles.actionGridButton, { backgroundColor: '#EAB308' }]}
+            style={[styles.actionGridCard, { borderColor: "rgba(234, 179, 8, 0.2)" }]}
           >
-            <Text style={styles.actionGridButtonIcon}>🚌</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(234, 179, 8, 0.08)" }]}>
+              <Feather name="truck" size={22} color="#EA580C" />
+            </View>
             <Text style={styles.actionGridButtonText}>Bus Tracking & QR</Text>
           </TouchableOpacity>
 
+          {/* Action 6: My Fees */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => router.push(ROUTES.APP.FEES)}
-            style={[styles.actionGridButton, { backgroundColor: '#10B981' }]}
+            style={[styles.actionGridCard, { borderColor: "rgba(16, 185, 129, 0.2)" }]}
           >
-            <Text style={styles.actionGridButtonIcon}>💳</Text>
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+              <Feather name="credit-card" size={22} color="#10B981" />
+            </View>
             <Text style={styles.actionGridButtonText}>My Fees & Receipts</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Today's Schedule Card */}
+      {/* Today's Schedule Timeline Section */}
       <View style={styles.scheduleSection}>
         <Text style={styles.sectionTitle}>Today's Schedule</Text>
         {loadingClasses ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 12 }} />
+          <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 24 }} />
         ) : todayClasses.length === 0 ? (
           <View style={styles.noClassCard}>
+            <Feather name="calendar" size={32} color={COLORS.textMuted} style={{ marginBottom: 8 }} />
             <Text style={styles.noClassText}>No lectures scheduled for today.</Text>
           </View>
         ) : (
-          todayClasses.map((c: any) => {
-            const status = c.type === "lecture" ? getLectureStatus(c.start_time, c.end_time) : null;
-            const isLive = status === "live";
-            const isCompleted = status === "completed";
+          <View style={styles.timelineContainer}>
+            {todayClasses.map((c: any, index: number) => {
+              const status = c.type === "lecture" ? getLectureStatus(c.start_time, c.end_time) : null;
+              const isLive = status === "live";
+              const isCompleted = status === "completed";
 
-            let badgeText = c.course_code;
-            let badgeStyle: any = styles.miniClassCode;
-            let cardStyle: any = styles.miniClassCard;
+              let badgeText = c.course_code;
+              let stripeStyle: any = styles.stripeUpcoming;
+              let badgeColor: string = COLORS.info;
 
-            if (c.type === "lecture") {
-              if (isLive) {
-                badgeText = "🔴 LIVE SESSION";
-                badgeStyle = [styles.miniClassCode, styles.liveClassCode];
-                cardStyle = [styles.miniClassCard, styles.liveClassCard];
-              } else if (isCompleted) {
-                badgeText = "⌛ COMPLETED";
-                badgeStyle = [styles.miniClassCode, styles.completedClassCode];
-                cardStyle = [styles.miniClassCard, styles.completedClassCard];
+              if (c.type === "lecture") {
+                if (isLive) {
+                  badgeText = "🔴 LIVE SESSION";
+                  stripeStyle = styles.stripeLive;
+                  badgeColor = COLORS.error;
+                } else if (isCompleted) {
+                  badgeText = "⌛ COMPLETED";
+                  stripeStyle = styles.stripeCompleted;
+                  badgeColor = COLORS.textSecondary;
+                } else {
+                  badgeText = "⏰ UPCOMING";
+                  stripeStyle = styles.stripeUpcoming;
+                  badgeColor = COLORS.info;
+                }
               } else {
-                badgeText = "⏰ UPCOMING";
-                badgeStyle = [styles.miniClassCode, styles.upcomingClassCode];
-                cardStyle = [styles.miniClassCard, styles.upcomingClassCard];
+                stripeStyle = styles.stripeUpcoming;
+                badgeText = "📅 SCHEDULED";
+                badgeColor = COLORS.accent;
               }
-            }
 
-            return (
-              <View key={c.id} style={cardStyle}>
-                <View style={styles.miniClassHeader}>
-                  <View style={styles.codeContainer}>
-                    <Text style={badgeStyle}>{badgeText}</Text>
-                    {c.type === "lecture" && isLive && (
-                      <Text style={styles.attendanceCodeBadge}>Code: {c.code}</Text>
-                    )}
+              return (
+                <View key={c.id} style={styles.timelineItem}>
+                  {/* Vertical line indicator connector */}
+                  {index < todayClasses.length - 1 && <View style={styles.timelineConnector} />}
+
+                  <View style={[styles.timelineStripe, stripeStyle]} />
+                  <View style={styles.timelineDetailsCard}>
+                    <View style={styles.timelineCardHeader}>
+                      <Text style={[styles.timelineBadge, { color: badgeColor, borderColor: badgeColor }]}>
+                        {badgeText}
+                      </Text>
+                      {c.type === "lecture" && isLive && (
+                        <View style={styles.attendanceCodeWrapper}>
+                          <Text style={styles.attendanceCodeText}>Code: {c.code}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.timelineClassName, isCompleted && styles.mutedText]} numberOfLines={1}>
+                      {c.course_name}
+                    </Text>
+                    <View style={styles.timelineCardFooter}>
+                      <View style={styles.footerInfoItem}>
+                        <Feather name="clock" size={12} color={COLORS.textSecondary} />
+                        <Text style={[styles.footerInfoText, isCompleted && styles.mutedText]}>
+                          {formatTimeStr(c.start_time)} - {formatTimeStr(c.end_time)}
+                        </Text>
+                      </View>
+                      <View style={styles.footerInfoItem}>
+                        <Feather name="map-pin" size={12} color={COLORS.textSecondary} />
+                        <Text style={[styles.footerInfoText, isCompleted && styles.mutedText]}>
+                          Room: {c.classroom_name || "TBD"}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-
-                <Text style={[styles.miniClassName, isCompleted && styles.mutedText]} numberOfLines={1}>
-                  {c.course_name}
-                </Text>
-
-                <View style={styles.miniClassDetails}>
-                  <Text style={[styles.miniClassTime, isCompleted && styles.mutedText]}>
-                    🕐 {formatTimeStr(c.start_time)} - {formatTimeStr(c.end_time)}
-                  </Text>
-                  <Text style={[styles.miniClassRoom, isCompleted && styles.mutedText]}>
-                    📍 Room: {c.classroom_name || "TBD"}
-                  </Text>
-                </View>
-              </View>
-            );
-          })
+              );
+            })}
+          </View>
         )}
       </View>
 
-
-
-      {/* Sign Out */}
-      <TouchableOpacity style={styles.signOutRow} onPress={handleLogout}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-
-      <View style={{ height: 32 }} />
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 };
@@ -401,244 +450,137 @@ export const StudentDashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F8FAFC", // Clean light grey slate background
+    position: "relative",
   },
+
   content: {
     padding: 24,
-    paddingTop: 52,
+    paddingTop: Platform.OS === "ios" ? 64 : 52,
   },
   header: {
+    marginBottom: 24,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+  },
+  headerMain: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    width: "100%",
+  },
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
   },
   welcomeText: {
     fontSize: 14,
+    fontWeight: "500",
     color: COLORS.textSecondary,
+    marginBottom: 2,
   },
   userName: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 24,
+    fontWeight: "900",
     color: COLORS.text,
+    letterSpacing: 0.3,
   },
   profileAvatarBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 4,
-    shadowColor: COLORS.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.8)",
   },
   profileAvatarText: {
     color: COLORS.white,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
   },
-  card: {
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1.2,
-    marginBottom: 24,
-  },
-  warningCard: {
-    backgroundColor: "rgba(245, 158, 11, 0.08)",
-    borderColor: COLORS.warning,
-  },
-  successCard: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-    borderColor: COLORS.success,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  cardText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  cardButton: {
-    height: 44,
-  },
-  actionSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  actionGrid: {
+  headerBottom: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  actionGridButton: {
-    width: '47%',
-    borderRadius: 14,
-    paddingVertical: 18,
-    paddingHorizontal: 10,
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
   },
-  actionGridButtonIcon: {
-    fontSize: 22,
-    marginBottom: 6,
-  },
-  actionGridButtonText: {
-    color: COLORS.white,
-    fontSize: 11,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  disabledBtn: {
-    opacity: 0.4,
-  },
-  scheduleSection: {
-    marginBottom: 24,
-  },
-  noClassCard: {
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: "center",
-  },
-  noClassText: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-  },
-  miniClassCard: {
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 8,
-  },
-  miniClassHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  miniClassCode: {
-    fontSize: 11,
+  dateText: {
+    fontSize: 12,
     fontWeight: "700",
     color: COLORS.primary,
-    backgroundColor: "rgba(74, 21, 75, 0.12)", // Translucent purple matching primary
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  codeContainer: {
+  biometricWarningBanner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-  },
-  liveClassCard: {
-    borderColor: COLORS.error,
-    borderWidth: 1.5,
-    backgroundColor: "rgba(220, 38, 38, 0.03)",
-  },
-  liveClassCode: {
-    color: COLORS.error,
-    backgroundColor: "rgba(220, 38, 38, 0.1)",
-  },
-  attendanceCodeBadge: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: COLORS.white,
-    backgroundColor: COLORS.error,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  completedClassCard: {
-    opacity: 0.6,
-    backgroundColor: "rgba(148, 163, 184, 0.05)",
-    borderColor: COLORS.border,
-  },
-  completedClassCode: {
-    color: "#64748b",
-    backgroundColor: "rgba(148, 163, 184, 0.15)",
-  },
-  upcomingClassCard: {
-    borderColor: COLORS.info,
+    backgroundColor: "rgba(234, 88, 12, 0.07)",
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    backgroundColor: "rgba(59, 130, 246, 0.03)",
+    borderColor: "rgba(234, 88, 12, 0.2)",
+    marginBottom: 24,
   },
-  upcomingClassCode: {
-    color: COLORS.info,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-  },
-  mutedText: {
-    color: "#94a3b8",
-  },
-  miniClassTime: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-  },
-  miniClassDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  bannerIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(234, 88, 12, 0.12)",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 4,
+    marginRight: 12,
   },
-  miniClassName: {
+  bannerTextWrapper: {
+    flex: 1,
+  },
+  bannerTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 4,
+    color: "#C2410C",
+    marginBottom: 2,
   },
-  miniClassRoom: {
+  bannerText: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: "#9A3412",
+    lineHeight: 16,
   },
-  historySection: {
-    flex: 1,
-    minHeight: 320,
+  bannerActionBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#EA580C",
+    borderRadius: 10,
+    marginLeft: 10,
   },
-  signOutRow: {
-    backgroundColor: "rgba(220, 38, 38, 0.08)",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(220, 38, 38, 0.2)",
-    marginTop: 20,
-  },
-  signOutText: {
-    color: COLORS.error,
-    fontSize: 15,
+  bannerActionBtnText: {
+    color: COLORS.white,
+    fontSize: 12,
     fontWeight: "700",
   },
-  compactSuccessBanner: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
+  biometricSuccessBanner: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 24,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   compactRow: {
     flexDirection: "row",
@@ -646,52 +588,233 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusBadgeGreen: {
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    backgroundColor: "rgba(16, 185, 129, 0.08)",
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   statusBadgeTextGreen: {
     color: COLORS.success,
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   compactRequestBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "rgba(74, 21, 75, 0.08)",
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderRadius: 10,
+    backgroundColor: "rgba(74, 21, 75, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(74, 21, 75, 0.2)",
   },
   compactRequestBtnText: {
     color: COLORS.primary,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
   },
   requestBadge: {
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   requestBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: 12,
+    fontWeight: "700",
   },
   requestStatus_pending: {
-    backgroundColor: "rgba(245, 158, 11, 0.08)",
-    borderColor: "rgba(245, 158, 11, 0.3)",
+    backgroundColor: "rgba(245, 158, 11, 0.05)",
+    borderColor: "rgba(245, 158, 11, 0.2)",
   },
   requestStatus_approved: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    backgroundColor: "rgba(16, 185, 129, 0.05)",
+    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   requestStatus_rejected: {
-    backgroundColor: "rgba(220, 38, 38, 0.08)",
-    borderColor: "rgba(220, 38, 38, 0.3)",
+    backgroundColor: "rgba(220, 38, 38, 0.05)",
+    borderColor: "rgba(220, 38, 38, 0.2)",
+  },
+  actionSection: {
+    marginBottom: 28,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.text,
+    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  actionGridCard: {
+    width: "48%",
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+  },
+  actionIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  actionGridButtonText: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  disabledBtn: {
+    opacity: 0.5,
+  },
+  scheduleSection: {
+    marginBottom: 28,
+  },
+  noClassCard: {
+    backgroundColor: COLORS.white,
+    padding: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+  },
+  noClassText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  timelineContainer: {
+    position: "relative",
+  },
+  timelineItem: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    marginBottom: 16,
+    position: "relative",
+  },
+  timelineConnector: {
+    position: "absolute",
+    left: 2,
+    top: 36,
+    bottom: -24,
+    width: 2,
+    backgroundColor: "#E2E8F0",
+    zIndex: 1,
+  },
+  timelineStripe: {
+    width: 6,
+    borderRadius: 3,
+    marginRight: 12,
+    zIndex: 2,
+  },
+  stripeLive: {
+    backgroundColor: COLORS.error,
+  },
+  stripeUpcoming: {
+    backgroundColor: COLORS.info,
+  },
+  stripeCompleted: {
+    backgroundColor: COLORS.textMuted,
+  },
+  timelineDetailsCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+  },
+  timelineCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  timelineBadge: {
+    fontSize: 10,
+    fontWeight: "800",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  attendanceCodeWrapper: {
+    backgroundColor: COLORS.error,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  attendanceCodeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: COLORS.white,
+  },
+  timelineClassName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 10,
+  },
+  timelineCardFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    gap: 16,
+  },
+  footerInfoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  footerInfoText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  mutedText: {
+    color: COLORS.textMuted,
+  },
+  signOutBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(220, 38, 38, 0.05)",
+    borderRadius: 14,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "rgba(220, 38, 38, 0.15)",
+    marginTop: 12,
+  },
+  signOutText: {
+    color: COLORS.error,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });
 

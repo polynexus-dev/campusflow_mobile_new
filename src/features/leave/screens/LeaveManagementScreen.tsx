@@ -67,7 +67,6 @@ export const LeaveManagementScreen: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Failed to load leave data:", err);
-      Alert.alert("Error Loading Leaves", err.message || "Failed to load leave details.");
     } finally {
       setLoading(false);
     }

@@ -160,8 +160,7 @@ export const LecturerDashboardScreen: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error("Failed to load lectures", err);
-      Alert.alert("Error", "Could not retrieve your lectures list.");
+      console.error("Failed to load lectures:", err);
     } finally {
       setLoadingLectures(false);
       setRefreshing(false);
