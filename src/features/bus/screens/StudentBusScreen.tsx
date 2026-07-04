@@ -13,6 +13,7 @@ import { busApi, LiveBusData } from "../services/busApi";
 import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
 import { BusMap } from "../components/BusMap";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const StudentBusScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,14 @@ export const StudentBusScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper
+      title="Bus Tracking"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      scrollable={true}
+    >
       {/* Scan Card */}
       <View style={styles.scanCard}>
         <Text style={styles.scanCardTitle}>Board College Bus</Text>
@@ -156,7 +164,7 @@ export const StudentBusScreen: React.FC = () => {
           <Text style={styles.emptyText}>No college buses are currently running on active routes.</Text>
         </View>
       )}
-    </ScrollView>
+    </ScreenWrapper>
   );
 };
 

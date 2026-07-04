@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
@@ -8,15 +8,27 @@ import { ROUTES } from "@/constants/route";
 import { timetableApi } from "@/features/timetable/api/timetableApi";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const StudentDashboardScreen: React.FC = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
+  const insets = useSafeAreaInsets();
   const [todayClasses, setTodayClasses] = useState<any[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [resetRequest, setResetRequest] = useState<{ status: string } | null>(null);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
+
+  const handleScroll = (event: any) => {
+    const y = event.nativeEvent.contentOffset.y;
+    if (y > 100) {
+      setShowStickyHeader(true);
+    } else {
+      setShowStickyHeader(false);
+    }
+  };
 
   const parseDateSafe = (dateStr: string) => {
     if (!dateStr) return new Date(NaN);
@@ -201,8 +213,27 @@ export const StudentDashboardScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header section */}
+    <View style={styles.rootContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {showStickyHeader && (
+        <View style={[styles.stickyHeader, { paddingTop: insets.top + 12 }]}>
+          <Text style={styles.stickyUserName} numberOfLines={1}>
+            {user?.username || "Student"}
+          </Text>
+          <View style={styles.stickyDateRow}>
+            <Feather name="calendar" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.stickyDateText}>{getHeaderDate()}</Text>
+          </View>
+        </View>
+      )}
+
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
       <View style={styles.header}>
         <View style={styles.headerMain}>
           <View style={styles.headerLeft}>
@@ -444,14 +475,55 @@ export const StudentDashboardScreen: React.FC = () => {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+  </View>
   );
 };
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC", // Clean light grey slate background
     position: "relative",
+  },
+  stickyHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 14,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  stickyUserName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  stickyDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stickyDateText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 
   content: {

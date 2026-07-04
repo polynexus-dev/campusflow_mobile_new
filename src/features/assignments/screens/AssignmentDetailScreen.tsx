@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
 import { assignmentsApi } from "../api/assignmentsApi";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const AssignmentDetailScreen: React.FC = () => {
   const router = useRouter();
@@ -90,12 +91,14 @@ export const AssignmentDetailScreen: React.FC = () => {
   const isPastDue = new Date(assignment.due_date) < new Date();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header / Nav */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Back to List</Text>
-      </TouchableOpacity>
-
+    <ScreenWrapper
+      title="Assignment Details"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      scrollable={true}
+    >
       {/* Assignment Header Card */}
       <View style={styles.detailCard}>
         <Text style={styles.courseCode}>{assignment.course_code}</Text>
@@ -209,7 +212,7 @@ export const AssignmentDetailScreen: React.FC = () => {
           )}
         </View>
       )}
-    </ScrollView>
+    </ScreenWrapper>
   );
 };
 
@@ -220,7 +223,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 52,
+    paddingTop: 16,
   },
   backButton: {
     alignSelf: "flex-start",

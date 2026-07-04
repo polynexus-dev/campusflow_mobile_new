@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -8,8 +8,9 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  StatusBar,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
@@ -150,6 +151,19 @@ export const ProfileScreen: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("light-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+      return () => {
+        StatusBar.setBarStyle("dark-content");
+      };
+    }, [])
+  );
 
   useEffect(() => {
     const fetchProfile = async () => {

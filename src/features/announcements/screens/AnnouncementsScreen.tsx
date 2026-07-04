@@ -17,6 +17,7 @@ import { COLORS } from "@/shared/theme/colors";
 import { announcementsApi } from "../api/announcementsApi";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const AnnouncementsScreen: React.FC = () => {
   const router = useRouter();
@@ -147,28 +148,26 @@ export const AnnouncementsScreen: React.FC = () => {
     }
   };
 
+  const headerRight = isSaaSOrCollegeAdmin ? (
+    <TouchableOpacity
+      style={styles.composeBtn}
+      onPress={() => setCreateModalVisible(true)}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.composeBtnIcon}>✏️</Text>
+    </TouchableOpacity>
+  ) : undefined;
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace(ROUTES.APP.DASHBOARD)}>
-          <Text style={styles.backButtonText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Notice Board</Text>
-            <Text style={styles.subtitle}>Official updates & campus announcements</Text>
-          </View>
-          {isSaaSOrCollegeAdmin && (
-            <TouchableOpacity
-              style={styles.composeBtn}
-              onPress={() => setCreateModalVisible(true)}
-            >
-              <Text style={styles.composeBtnIcon}>✏️</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+    <ScreenWrapper
+      title="Notice Board"
+      showHeader={true}
+      showBack={true}
+      onBack={() => router.replace(ROUTES.APP.DASHBOARD)}
+      right={headerRight}
+      style={styles.container}
+    >
+      <Text style={styles.subtitle}>Official updates & campus announcements</Text>
 
       {/* Filter and Search Bar */}
       <View style={styles.filterSection}>
@@ -365,7 +364,7 @@ export const AnnouncementsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -404,7 +403,9 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 8,
   },
   composeBtn: {
     width: 44,

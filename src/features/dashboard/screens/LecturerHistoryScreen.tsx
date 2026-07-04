@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 type ConductedLecture = {
   id: number;
@@ -119,17 +120,15 @@ export const LecturerHistoryScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={styles.backBtnText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Conducted Lectures</Text>
-        <Text style={styles.headerSubtitle}>
-          View and analyze the report of classes you have conducted.
-        </Text>
-      </View>
+    <ScreenWrapper
+      title="Conducted Lectures"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+    >
+      <Text style={styles.headerSubtitle}>
+        View and analyze the report of classes you have conducted.
+      </Text>
 
       {/* Inline Filters Panel */}
       <View style={styles.filtersContainer}>
@@ -321,7 +320,7 @@ export const LecturerHistoryScreen: React.FC = () => {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -361,7 +360,9 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
     lineHeight: 18,
   },
   filtersContainer: {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     position: "absolute",
-    top: 178,
+    top: 112,
     width: "30%",
     backgroundColor: COLORS.surface,
     borderRadius: 8,

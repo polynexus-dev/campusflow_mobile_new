@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { timetableApi } from "../api/timetableApi";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -54,15 +55,14 @@ export const TimetableScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Weekly Timetable</Text>
-        <Text style={styles.subtitle}>Your scheduled lectures and classrooms</Text>
-      </View>
+    <ScreenWrapper
+      title="Weekly Timetable"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <Text style={styles.subtitle}>Your scheduled lectures and classrooms</Text>
 
       {/* Day Selector Tabs */}
       <View style={styles.tabsContainer}>
@@ -131,7 +131,7 @@ export const TimetableScreen: React.FC = () => {
           )}
         </ScrollView>
       )}
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -140,32 +140,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    color: COLORS.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginHorizontal: 24,
+    marginVertical: 12,
   },
   tabsContainer: {
     height: 60,

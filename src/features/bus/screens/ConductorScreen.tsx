@@ -14,6 +14,7 @@ import { COLORS } from "@/shared/theme/colors";
 import * as Location from "expo-location";
 import { useAuthStore } from "@store/authStore";
 import { buildUrl } from "@services/api/buildUrl";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const ConductorScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -158,7 +159,14 @@ export const ConductorScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper
+      title="Conductor Panel"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      scrollable={true}
+    >
       {/* Route Info */}
       <View style={styles.card}>
         <Text style={styles.label}>Active Route</Text>
@@ -219,7 +227,7 @@ export const ConductorScreen: React.FC = () => {
           ))}
         </View>
       </View>
-    </ScrollView>
+    </ScreenWrapper>
   );
 };
 

@@ -16,6 +16,7 @@ import { attendanceApi } from "../api/attendanceApi";
 import { CameraCapture } from "../components/CameraCapture";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const ANGLES = ["front", "left", "right"] as const;
@@ -159,45 +160,64 @@ export const FaceRegistrationScreen: React.FC = () => {
   // ── Render: Locked if already registered ────────────────────────────────
   if (isFaceRegistered && !registrationComplete) {
     return (
-      <View style={styles.successContainer}>
-        <Text style={styles.successIcon}>🔒</Text>
-        <Text style={[styles.successTitle, { color: COLORS.primary }]}>Biometrics Locked</Text>
-        <Text style={styles.successText}>
-          Your face biometrics are already registered and locked. If you need to recapture your face data, please contact your HOD to request a reset.
-        </Text>
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
-        >
-          <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenWrapper
+        title="Face Registration"
+        showHeader={true}
+        showBack={true}
+        style={styles.container}
+      >
+        <View style={styles.successContainer}>
+          <Text style={styles.successIcon}>🔒</Text>
+          <Text style={[styles.successTitle, { color: COLORS.primary }]}>Biometrics Locked</Text>
+          <Text style={styles.successText}>
+            Your face biometrics are already registered and locked. If you need to recapture your face data, please contact your HOD to request a reset.
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
+          >
+            <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenWrapper>
     );
   }
 
   // ── Render: Registration Complete ──────────────────────────────────────
   if (registrationComplete) {
     return (
-      <View style={styles.successContainer}>
-        <Text style={styles.successIcon}>🎉</Text>
-        <Text style={styles.successTitle}>Face Registered!</Text>
-        <Text style={styles.successText}>
-          Your face has been registered successfully. You can now mark attendance using your face.
-        </Text>
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
-        >
-          <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenWrapper
+        title="Face Registration"
+        showHeader={true}
+        showBack={true}
+        style={styles.container}
+      >
+        <View style={styles.successContainer}>
+          <Text style={styles.successIcon}>🎉</Text>
+          <Text style={styles.successTitle}>Face Registered!</Text>
+          <Text style={styles.successText}>
+            Your face has been registered successfully. You can now mark attendance using your face.
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => router.replace(ROUTES.APP.DASHBOARD)}
+          >
+            <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenWrapper>
     );
   }
 
   // ── Render: Camera Capture ─────────────────────────────────────────────
   if (showCamera && !allCaptured) {
     return (
-      <View style={styles.container}>
+      <ScreenWrapper
+        title="Face Registration"
+        showHeader={true}
+        showBack={true}
+        style={styles.container}
+      >
         {/* Progress indicator */}
         <View style={styles.progressBar}>
           {ANGLES.map((angle, index) => (
@@ -231,7 +251,7 @@ export const FaceRegistrationScreen: React.FC = () => {
             angleGuide={currentAngle}
           />
         </View>
-      </View>
+      </ScreenWrapper>
     );
   }
 
@@ -295,7 +315,7 @@ const styles = StyleSheet.create({
   progressBar: {
     flexDirection: "row",
     justifyContent: "center",
-    paddingTop: 56,
+    paddingTop: 16,
     paddingBottom: 8,
     gap: 16,
     backgroundColor: COLORS.background,
@@ -347,7 +367,7 @@ const styles = StyleSheet.create({
   // Review screen
   reviewContent: {
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   reviewTitle: {

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, FlatList } from "react-native";
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, FlatList, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { assignmentsApi } from "../api/assignmentsApi";
 import { ROUTES } from "@/constants/route";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const AssignmentsListScreen: React.FC = () => {
   const router = useRouter();
@@ -48,15 +49,15 @@ export const AssignmentsListScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace(ROUTES.APP.DASHBOARD)}>
-          <Text style={styles.backButtonText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Assignments</Text>
-        <Text style={styles.subtitle}>Track and submit your coursework tasks</Text>
-      </View>
+    <ScreenWrapper
+      title="Assignments"
+      showHeader={true}
+      showBack={true}
+      onBack={() => router.replace(ROUTES.APP.DASHBOARD)}
+      style={styles.container}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <Text style={styles.subtitle}>Track and submit your coursework tasks</Text>
 
       {/* Main List */}
       {loading ? (
@@ -117,7 +118,7 @@ export const AssignmentsListScreen: React.FC = () => {
           }}
         />
       )}
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -126,32 +127,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    color: COLORS.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 0,
   },
   loadingContainer: {
     flex: 1,

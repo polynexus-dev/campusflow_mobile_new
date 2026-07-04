@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, FlatList, ActivityIndicator, TouchableOpacity }
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { attendanceApi } from "../api/attendanceApi";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const AttendanceHistoryScreen: React.FC = () => {
   const router = useRouter();
@@ -33,11 +34,12 @@ export const AttendanceHistoryScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-        <Text style={styles.backBtnText}>← Back to Dashboard</Text>
-      </TouchableOpacity>
-      <Text style={styles.title}>Verification Log</Text>
+    <ScreenWrapper
+      title="Verification Log"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+    >
       {history.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No biometric attempts recorded yet.</Text>
@@ -46,6 +48,7 @@ export const AttendanceHistoryScreen: React.FC = () => {
         <FlatList
           data={history}
           keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View style={[styles.card, item.is_verified ? styles.successCard : styles.failCard]}>
               <View style={styles.row}>
@@ -69,7 +72,7 @@ export const AttendanceHistoryScreen: React.FC = () => {
           )}
         />
       )}
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -77,7 +80,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 20,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   center: {
     flex: 1,

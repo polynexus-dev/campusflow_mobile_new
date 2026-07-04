@@ -16,6 +16,7 @@ import { COLORS } from "@/shared/theme/colors";
 import { leaveApi } from "../api/leaveApi";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const LeaveManagementScreen: React.FC = () => {
   const router = useRouter();
@@ -175,15 +176,14 @@ export const LeaveManagementScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace(ROUTES.APP.DASHBOARD)}>
-          <Text style={styles.backButtonText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Leave Hub</Text>
-        <Text style={styles.subtitle}>Manage leave balances and requests</Text>
-      </View>
+    <ScreenWrapper
+      title="Leave Hub"
+      showHeader={true}
+      showBack={true}
+      onBack={() => router.replace(ROUTES.APP.DASHBOARD)}
+      style={styles.container}
+    >
+      <Text style={styles.subtitle}>Manage leave balances and requests</Text>
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
@@ -397,7 +397,7 @@ export const LeaveManagementScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -431,7 +431,9 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    marginHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 8,
   },
   tabsContainer: {
     flexDirection: "row",

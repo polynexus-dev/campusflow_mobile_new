@@ -20,6 +20,7 @@ import { CameraCapture } from "../components/CameraCapture";
 import { ROUTES } from "@/constants/route";
 import { useAuthStore } from "@store/authStore";
 import * as Location from "expo-location";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 type Lecture = {
   id: number;
@@ -398,28 +399,27 @@ export const MarkAttendanceScreen: React.FC = () => {
 
   // ── Render: Lecture Selection ──────────────────────────────────────────
   return (
-    <>
-      <ScrollView
+    <ScreenWrapper
+      title="Mark Attendance"
+      showHeader={true}
+      showBack={true}
       style={styles.rootContainer}
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={COLORS.primary}
-        />
-      }
+      scrollable={false}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={styles.backBtnText}>← Back to Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mark Attendance</Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
         <Text style={styles.headerSubtitle}>
           Select your active lecture, then perform the biometric liveness selfie check to verify.
         </Text>
-      </View>
 
       {/* Loading */}
       {isLoadingLectures && (
@@ -638,7 +638,7 @@ export const MarkAttendanceScreen: React.FC = () => {
         </View>
       </View>
     </Modal>
-  </>
+  </ScreenWrapper>
   );
 };
 
@@ -687,6 +687,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 15,
     lineHeight: 22,
+    marginTop: 12,
+    marginBottom: 16,
   },
 
   // Lecture cards

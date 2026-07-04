@@ -3,9 +3,9 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 
 export default function TabLayout() {
   const tabBarColor = "#ffffffff"; // White background matching COLORS.surface
-  const activeTintColor = "#4a154bff"; // Deep Purple matching COLORS.primary
-  const inactiveTintColor = "#64748bff"; // Slate grey matching COLORS.textSecondary
-  const indicatorColor = "#4a154b1f"; // Translucent primary color for click ripple/indicator selection
+  const activeTintColor = "#701672ff"; // Deep Purple matching COLORS.primary
+  const inactiveTintColor = "#212a36ff"; // Darker slate grey for improved visibility
+  const indicatorColor = "#c333c534"; // Translucent primary color for click ripple/indicator selection
 
   return (
     <NativeTabs

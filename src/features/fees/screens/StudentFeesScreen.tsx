@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { feeApi, FeeInvoice, FeePaymentReceipt } from "../services/feeApi";
 import { COLORS } from "@/shared/theme/colors";
+import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 
 export const StudentFeesScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -120,7 +121,12 @@ export const StudentFeesScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScreenWrapper
+      title="Fees & Receipts"
+      showHeader={true}
+      showBack={true}
+      style={styles.container}
+    >
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -158,7 +164,7 @@ export const StudentFeesScreen: React.FC = () => {
           }
         />
       )}
-    </View>
+    </ScreenWrapper>
   );
 };
 

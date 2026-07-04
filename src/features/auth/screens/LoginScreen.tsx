@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { COLORS } from "@/shared/theme/colors";
@@ -154,12 +154,10 @@ export const LoginScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <View style={styles.logoInnerContainer}>
-              <Feather name="shield" size={32} color={COLORS.white} />
-              <View style={styles.logoCheckmark}>
-                <Feather name="check" size={12} color={COLORS.success} />
-              </View>
-            </View>
+            <Image
+              source={require("../../../../assets/campus_nexus_icon.png")}
+              style={styles.logoImage}
+            />
           </View>
           <Text style={styles.title}>
             Campus<Text style={styles.titleHighlight}>Nexus</Text>
@@ -272,10 +270,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
@@ -286,27 +284,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
-  logoInnerContainer: {
+  logoImage: {
     width: 60,
     height: 60,
-    borderRadius: 18,
-    backgroundColor: COLORS.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  logoCheckmark: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.white,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.secondary,
+    resizeMode: "contain",
   },
   title: {
     fontSize: 34,
