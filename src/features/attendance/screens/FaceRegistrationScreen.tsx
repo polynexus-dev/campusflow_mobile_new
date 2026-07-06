@@ -50,6 +50,7 @@ export const FaceRegistrationScreen: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showCamera, setShowCamera] = useState(true);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   const currentAngle = ANGLES[currentAngleIndex];
   const allCaptured = ANGLES.every((angle) => capturedImages[angle] !== null);
@@ -105,6 +106,8 @@ export const FaceRegistrationScreen: React.FC = () => {
           } as any);
         }
       });
+
+      formData.append("biometric_consent_given", "true");
 
       const response = await attendanceApi.registerFace(formData);
       updateFaceStatus(true);
@@ -179,6 +182,54 @@ export const FaceRegistrationScreen: React.FC = () => {
             <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
           </TouchableOpacity>
         </View>
+      </ScreenWrapper>
+    );
+  }
+
+  // ── Render: Consent notice modal before camera (DPDP Act Compliance) ─────
+  if (!consentAccepted && !registrationComplete && !isFaceRegistered) {
+    return (
+      <ScreenWrapper
+        title="Biometric Consent"
+        showHeader={true}
+        showBack={true}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.consentContent}>
+          <Text style={styles.consentIcon}>📋</Text>
+          <Text style={styles.consentTitle}>Biometric Processing Consent Notice</Text>
+          <Text style={styles.consentSubtitle}>
+            Under the Digital Personal Data Protection (DPDP) Act, 2023
+          </Text>
+
+          <View style={styles.noticeCard}>
+            <Text style={styles.noticeItemTitle}>1. Purpose of Collection</Text>
+            <Text style={styles.noticeItemText}>
+              We process your facial images to generate 512-dimensional numerical face templates. This is strictly used for class attendance logging, campus security, and identity verification.
+            </Text>
+
+            <Text style={styles.noticeItemTitle}>2. Storage & Security</Text>
+            <Text style={styles.noticeItemText}>
+              Your raw images and templates are stored securely in your college's database schema. They will not be shared with any third party.
+            </Text>
+
+            <Text style={styles.noticeItemTitle}>3. Right to Erasure & Withdrawal</Text>
+            <Text style={styles.noticeItemText}>
+              You have the right to withdraw your consent or request complete erasure of your biometrics at any time from your account Profile & Settings dashboard on the web portal.
+            </Text>
+          </View>
+
+          <Text style={styles.agreementText}>
+            By clicking "Agree & Proceed", you provide clear, unconditional, and informed consent to CampusFlow to collect and process your biometric templates for campus ERP services.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => setConsentAccepted(true)}
+          >
+            <Text style={styles.primaryBtnText}>Agree & Proceed</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </ScreenWrapper>
     );
   }
@@ -471,6 +522,61 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     marginBottom: 32,
+  },
+
+  // Consent Screen Styles
+  consentContent: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
+    alignItems: "center",
+  },
+  consentIcon: {
+    fontSize: 52,
+    marginBottom: 16,
+  },
+  consentTitle: {
+    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  consentSubtitle: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  noticeCard: {
+    backgroundColor: COLORS.surfaceDark,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: "100%",
+    marginBottom: 24,
+  },
+  noticeItemTitle: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+    marginTop: 4,
+  },
+  noticeItemText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  agreementText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 28,
   },
 });
 

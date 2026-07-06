@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, Image } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, Image, Modal } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { COLORS } from "@/shared/theme/colors";
@@ -86,6 +86,16 @@ export const LoginScreen: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Onboarding & Recovery States
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotToken, setForgotToken] = useState("");
+  const [forgotPassword, setForgotPassword] = useState("");
+  const [forgotConfirm, setForgotConfirm] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -201,7 +211,15 @@ export const LoginScreen: React.FC = () => {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              onPress={() => Alert.alert("Forgot Password", "Please contact your college administrator to reset your password.")} 
+              onPress={() => {
+                setShowForgot(true);
+                setForgotStep(1);
+                setForgotEmail("");
+                setForgotOtp("");
+                setForgotToken("");
+                setForgotPassword("");
+                setForgotConfirm("");
+              }} 
               activeOpacity={0.7}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -225,6 +243,165 @@ export const LoginScreen: React.FC = () => {
             </Text>
           </View>
         </View>
+      {/* Forgot Password Modal (DPDP Compliance & Recovery) */}
+      <Modal
+        visible={showForgot}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowForgot(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+              <TouchableOpacity
+                onPress={() => setShowForgot(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather name="x" size={22} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalScroll} keyboardShouldPersistTaps="handled">
+              {forgotStep === 1 && (
+                <View>
+                  <Text style={styles.modalDescription}>
+                    Enter your registered college email. We will send you a 6-digit verification code.
+                  </Text>
+                  <CustomInput
+                    label="College Email Address"
+                    placeholder="student@college.edu"
+                    value={forgotEmail}
+                    onChangeText={setForgotEmail}
+                    icon="mail"
+                  />
+                  <Button
+                    title="Send Verification Code"
+                    onPress={async () => {
+                      if (!forgotEmail) {
+                        Alert.alert("Error", "Please enter your college email address.");
+                        return;
+                      }
+                      setForgotLoading(true);
+                      try {
+                        const response = await authApi.forgotPasswordRequestOTP({ email: forgotEmail });
+                        Alert.alert("Code Sent", response.message || "OTP has been sent to your email.");
+                        setForgotStep(2);
+                      } catch (err: any) {
+                        Alert.alert("Failed", err.message || "Error generating recovery code.");
+                      } finally {
+                        setForgotLoading(false);
+                      }
+                    }}
+                    loading={forgotLoading}
+                    style={styles.modalButton}
+                  />
+                </View>
+              )}
+
+              {forgotStep === 2 && (
+                <View>
+                  <Text style={styles.modalDescription}>
+                    Enter the 6-digit OTP code sent to your email to verify your identity:
+                  </Text>
+                  <CustomInput
+                    label="6-Digit Code"
+                    placeholder="123456"
+                    value={forgotOtp}
+                    onChangeText={setForgotOtp}
+                    icon="shield"
+                    autoCapitalize="none"
+                  />
+                  <Button
+                    title="Verify Verification Code"
+                    onPress={async () => {
+                      if (!forgotOtp) {
+                        Alert.alert("Error", "Please enter the verification code.");
+                        return;
+                      }
+                      setForgotLoading(true);
+                      try {
+                        const response = await authApi.forgotPasswordVerifyOTP({ email: forgotEmail, otp: forgotOtp });
+                        setForgotToken(response.reset_token);
+                        setForgotStep(3);
+                      } catch (err: any) {
+                        Alert.alert("Verification Failed", err.message || "Invalid or expired OTP.");
+                      } finally {
+                        setForgotLoading(false);
+                      }
+                    }}
+                    loading={forgotLoading}
+                    style={styles.modalButton}
+                  />
+                </View>
+              )}
+
+              {forgotStep === 3 && (
+                <View>
+                  <Text style={styles.modalDescription}>
+                    Enter your new secure password:
+                  </Text>
+                  <CustomInput
+                    label="New Password"
+                    placeholder="••••••••"
+                    value={forgotPassword}
+                    onChangeText={setForgotPassword}
+                    icon="lock"
+                    secureTextEntry
+                  />
+                  <CustomInput
+                    label="Confirm New Password"
+                    placeholder="••••••••"
+                    value={forgotConfirm}
+                    onChangeText={setForgotConfirm}
+                    icon="lock"
+                    secureTextEntry
+                  />
+                  <Button
+                    title="Save New Password"
+                    onPress={async () => {
+                      if (!forgotPassword || !forgotConfirm) {
+                        Alert.alert("Error", "Please fill in all password fields.");
+                        return;
+                      }
+                      if (forgotPassword !== forgotConfirm) {
+                        Alert.alert("Error", "Passwords do not match.");
+                        return;
+                      }
+                      setForgotLoading(true);
+                      try {
+                        const response = await authApi.forgotPasswordReset({
+                          email: forgotEmail,
+                          reset_token: forgotToken,
+                          password: forgotPassword,
+                          confirm_password: forgotConfirm,
+                        });
+                        Alert.alert("Success", response.message || "Password updated successfully. You can now log in.");
+                        setShowForgot(false);
+                        setForgotStep(1);
+                        setForgotEmail("");
+                        setForgotOtp("");
+                        setForgotToken("");
+                        setForgotPassword("");
+                        setForgotConfirm("");
+                      } catch (err: any) {
+                        Alert.alert("Reset Failed", err.message || "Failed to update password.");
+                      } finally {
+                        setForgotLoading(false);
+                      }
+                    }}
+                    loading={forgotLoading}
+                    style={styles.modalButton}
+                  />
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -442,6 +619,52 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 14,
     fontWeight: "700",
+  },
+
+  // Modal Styling
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    maxHeight: "85%",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  modalScroll: {
+    flexGrow: 1,
+  },
+  modalDescription: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  modalButton: {
+    marginTop: 12,
+    borderRadius: 14,
+    height: 54,
   },
 });
 

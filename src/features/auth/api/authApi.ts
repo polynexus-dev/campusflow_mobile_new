@@ -30,4 +30,19 @@ export const authApi = {
     const response = await httpClient.post("/student/reset-device-lock/", payload);
     return response.data;
   },
+
+  forgotPasswordRequestOTP: async (payload: { email: string }) => {
+    const response = await httpClient.post("/user/forgot-password/request-otp/", payload);
+    return response.data;
+  },
+
+  forgotPasswordVerifyOTP: async (payload: { email: string; otp: string }) => {
+    const response = await httpClient.post("/user/forgot-password/verify-otp/", payload);
+    return response.data;
+  },
+
+  forgotPasswordReset: async (payload: Record<string, any>) => {
+    const response = await httpClient.post("/user/forgot-password/reset/", payload);
+    return response.data;
+  },
 };
