@@ -45,4 +45,9 @@ export const authApi = {
     const response = await httpClient.post("/user/forgot-password/reset/", payload);
     return response.data;
   },
+
+  grantConsent: async () => {
+    const response = await httpClient.post("/user/grant-consent/");
+    return response.data;
+  },
 };

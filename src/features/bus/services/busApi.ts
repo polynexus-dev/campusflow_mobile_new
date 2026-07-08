@@ -9,6 +9,16 @@ export interface BusStop {
   absent: number;
 }
 
+export interface BusPassenger {
+  user_id: number;
+  name: string;
+  role: string;
+  boarding_stop: string;
+  boarded_today: boolean;
+  balance_fee: number | null;
+  fee_status: "pending" | "paid" | "payroll_deduction";
+}
+
 export interface DriverDashboardData {
   route_id: number;
   route_name: string;
@@ -17,6 +27,15 @@ export interface DriverDashboardData {
   boarded_total: number;
   absent_total: number;
   stops: BusStop[];
+  passengers: BusPassenger[];
+  total_pending_bus_dues: number;
+}
+
+export interface TripStats {
+  trips_this_week: number;
+  distance_this_week_km: number;
+  trips_this_month: number;
+  distance_this_month_km: number;
 }
 
 export interface LiveBusData {
@@ -37,6 +56,21 @@ export const busApi = {
   // Conductor endpoints
   getDriverDashboard: async (): Promise<DriverDashboardData> => {
     const res = await httpClient.get("api/bus/driver/dashboard/");
+    return res.data;
+  },
+
+  startTrip: async (): Promise<{ trip_id: number; started_at: string }> => {
+    const res = await httpClient.post("api/bus/driver/trip/start/");
+    return res.data;
+  },
+
+  endTrip: async (): Promise<{ trip_id: number; ended_at: string; distance_km: number }> => {
+    const res = await httpClient.post("api/bus/driver/trip/end/");
+    return res.data;
+  },
+
+  getTripStats: async (): Promise<TripStats> => {
+    const res = await httpClient.get("api/bus/driver/trip-stats/");
     return res.data;
   },
 

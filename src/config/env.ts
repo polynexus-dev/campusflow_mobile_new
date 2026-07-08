@@ -1,7 +1,11 @@
 // Support dynamic URL construction with local multi-tenancy helper
 const getApiHost = (): string => {
   // Read from the .env file if available, fallback to Android Emulator default loopback
-  return process.env.EXPO_PUBLIC_API_HOST || "10.0.2.2:8000";
+  const host = process.env.EXPO_PUBLIC_API_HOST || "10.0.2.2:8000";
+  if (!host.startsWith("http://") && !host.startsWith("https://")) {
+    return `http://${host}`;
+  }
+  return host;
 };
 
 export const ENV = {

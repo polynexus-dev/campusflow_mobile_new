@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
 import { assignmentsApi } from "../api/assignmentsApi";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+
+type PickedFile = { uri: string; name: string; mimeType?: string };
 
 export const AssignmentDetailScreen: React.FC = () => {
   const router = useRouter();
@@ -17,7 +20,7 @@ export const AssignmentDetailScreen: React.FC = () => {
   // Submission Form State
   const [textSubmission, setTextSubmission] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [simulatedFile, setSimulatedFile] = useState<boolean>(false);
+  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
 
   const loadData = async () => {
     if (!id) return;
@@ -44,7 +47,7 @@ export const AssignmentDetailScreen: React.FC = () => {
   }, [id]);
 
   const handleSubmit = async () => {
-    if (!textSubmission.trim() && !simulatedFile) {
+    if (!textSubmission.trim() && !pickedFile) {
       Alert.alert("Submission Error", "Please provide either a text response or attach a file.");
       return;
     }
@@ -52,14 +55,14 @@ export const AssignmentDetailScreen: React.FC = () => {
     setSubmitting(true);
     try {
       let fileInfo = undefined;
-      if (simulatedFile) {
+      if (pickedFile) {
         fileInfo = {
-          uri: "file://simulated_cache/homework.pdf",
-          name: "homework.pdf",
-          type: "application/pdf",
+          uri: pickedFile.uri,
+          name: pickedFile.name,
+          type: pickedFile.mimeType || "application/octet-stream",
         };
       }
-      
+
       await assignmentsApi.submitAssignment(id!, textSubmission, fileInfo);
       Alert.alert("Success", "Your assignment was submitted successfully!");
       loadData(); // reload to show the submission
@@ -190,15 +193,27 @@ export const AssignmentDetailScreen: React.FC = () => {
                 onChangeText={setTextSubmission}
               />
 
-              {/* File Attachment Mock Picker */}
+              {/* File Attachment Picker */}
               <Text style={styles.inputLabel}>File Upload (PDF/ZIP)</Text>
               <TouchableOpacity
                 activeOpacity={0.8}
-                style={[styles.mockPicker, simulatedFile && styles.mockPickerActive]}
-                onPress={() => setSimulatedFile(!simulatedFile)}
+                style={[styles.mockPicker, pickedFile && styles.mockPickerActive]}
+                onPress={async () => {
+                  if (pickedFile) {
+                    setPickedFile(null);
+                    return;
+                  }
+                  const result = await DocumentPicker.getDocumentAsync({
+                    type: ["application/pdf", "application/zip"],
+                  });
+                  if (!result.canceled && result.assets && result.assets.length > 0) {
+                    const asset = result.assets[0];
+                    setPickedFile({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType });
+                  }
+                }}
               >
                 <Text style={styles.mockPickerText}>
-                  {simulatedFile ? "✓ Attachment: homework.pdf (Tap to Remove)" : "📎 Add simulated homework.pdf file"}
+                  {pickedFile ? `✓ Attachment: ${pickedFile.name} (Tap to Remove)` : "📎 Attach a PDF or ZIP file"}
                 </Text>
               </TouchableOpacity>
 

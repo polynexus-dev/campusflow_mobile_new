@@ -145,18 +145,18 @@ export const LeaveManagementScreen: React.FC = () => {
       <Text style={styles.balanceTypeName}>{item.leave_type_name || item.leave_type}</Text>
       <View style={styles.balanceStatsRow}>
         <View style={styles.balanceStatItem}>
-          <Text style={styles.balanceStatNum}>{item.allocated_days || item.max_days || 0}</Text>
+          <Text style={styles.balanceStatNum}>{item.allocated ?? item.allocated_days ?? item.max_days ?? 0}</Text>
           <Text style={styles.balanceStatLabel}>Max</Text>
         </View>
         <View style={styles.balanceStatDivider} />
         <View style={styles.balanceStatItem}>
-          <Text style={styles.balanceStatNum}>{item.used_days || 0}</Text>
+          <Text style={styles.balanceStatNum}>{item.used ?? item.used_days ?? 0}</Text>
           <Text style={styles.balanceStatLabel}>Used</Text>
         </View>
         <View style={styles.balanceStatDivider} />
         <View style={[styles.balanceStatItem, { borderRightWidth: 0 }]}>
           <Text style={[styles.balanceStatNum, { color: COLORS.success }]}>
-            {(item.allocated_days || item.max_days || 0) - (item.used_days || 0)}
+            {item.remaining ?? (item.allocated ?? item.allocated_days ?? item.max_days ?? 0) - (item.used ?? item.used_days ?? 0)}
           </Text>
           <Text style={styles.balanceStatLabel}>Available</Text>
         </View>
@@ -254,9 +254,9 @@ export const LeaveManagementScreen: React.FC = () => {
                         📅 {request.start_date} to {request.end_date}
                       </Text>
                       <Text style={styles.reasonText}>Reason: "{request.reason}"</Text>
-                      {request.reviewed_by_name && (
+                      {request.approved_by && (
                         <Text style={styles.reviewText}>
-                          Reviewed by: {request.reviewed_by_name}
+                          Reviewed by: {request.approved_by}
                         </Text>
                       )}
                     </View>
@@ -334,12 +334,9 @@ export const LeaveManagementScreen: React.FC = () => {
                   <View key={request.id} style={styles.approvalCard}>
                     <View style={styles.approvalHeader}>
                       <View>
-                        <Text style={styles.applicantName}>{request.applicant_name}</Text>
-                        <Text style={styles.applicantDept}>
-                          {request.applicant_role || "Student"} • Dept: {request.applicant_department || "N/A"}
-                        </Text>
+                        <Text style={styles.applicantName}>{request.full_name || request.username}</Text>
                       </View>
-                      <Text style={styles.leaveTypeTag}>{request.leave_type_name}</Text>
+                      <Text style={styles.leaveTypeTag}>{request.leave_type_name || request.leave_type}</Text>
                     </View>
 
                     <Text style={styles.approvalDuration}>

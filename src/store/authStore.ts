@@ -5,7 +5,12 @@ interface UserProfile {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   role: string; // 'student', 'staff', etc.
+  consent_given?: boolean;
+  tenant_name?: string;
+  tenant_logo?: string | null;
   student_profile?: {
     student_id: string;
     is_face_registered: boolean;
@@ -28,6 +33,7 @@ interface AuthState {
   setCollegeSchema: (schema: string | null) => Promise<void>;
   setDeviceId: (deviceId: string) => Promise<void>;
   updateFaceRegisteredStatus: (status: boolean) => void;
+  updateConsentStatus: (status: boolean) => void;
   logout: () => Promise<void>;
 }
 
@@ -107,10 +113,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  updateConsentStatus: (status) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        consent_given: status,
+      };
+      storage.setItem("cf_user", JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+    }
+  },
+
   logout: async () => {
     await storage.removeItem("cf_token");
     await storage.removeItem("cf_user");
-    // Keep collegeDomain, collegeSchema and deviceId for better UX
-    set({ user: null, token: null, isAuthenticated: false });
+    // collegeSchema must not survive logout: httpClient attaches it as the
+    // X-Tenant header on every request including the next login attempt,
+    // and the backend's login endpoint rejects any request that isn't on
+    // the public schema — so a stale schema here permanently locks the
+    // device out of logging back in as anyone, on any college.
+    await storage.removeItem("cf_domain");
+    await storage.removeItem("cf_schema");
+    // deviceId is kept — it's the biometric device-lock fingerprint and must
+    // stay stable across logins on the same physical device.
+    set({ user: null, token: null, isAuthenticated: false, collegeDomain: null, collegeSchema: null });
   },
 }));

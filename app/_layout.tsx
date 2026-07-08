@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
-  const { isAuthenticated, isLoading, initializeAuth } = useAuthStore();
+  const { isAuthenticated, isLoading, initializeAuth, user } = useAuthStore();
 
   useEffect(() => {
     // 1. Load persisted token/user values
@@ -22,15 +22,32 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAppGroup = segments[0] === "(student)";
+    const inConsentGroup = segments[0] === "(consent)";
 
-    if (!isAuthenticated && inAppGroup) {
+    if (!isAuthenticated) {
       // Redirect to login if accessing app route while unauthenticated
-      router.replace("/(auth)/login");
-    } else if (isAuthenticated && !inAppGroup) {
-      // Redirect to dashboard if logged in and accessing auth route
-      router.replace("/(student)/(tabs)/dashboard");
+      if (inAppGroup || inConsentGroup) {
+        router.replace("/(auth)/login");
+      }
+    } else {
+      // User is authenticated
+      if (user && user.consent_given === false) {
+        // Force to consent notice screen if consent not given
+        if (segments[0] !== "(consent)") {
+          router.replace("/(consent)/consent");
+        }
+      } else {
+        // Redirect to dashboard if logged in and accessing auth or consent routes
+        if (inConsentGroup || !inAppGroup) {
+          if (user?.role === "Support Staff" || user?.role === "staff") {
+            router.replace("/(student)/bus-tracking");
+          } else {
+            router.replace("/(student)/(tabs)/dashboard");
+          }
+        }
+      }
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, segments, user?.consent_given]);
 
   if (isLoading) {
     return (
@@ -44,6 +61,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(student)" />
+      <Stack.Screen name="(consent)" />
     </Stack>
   );
 }

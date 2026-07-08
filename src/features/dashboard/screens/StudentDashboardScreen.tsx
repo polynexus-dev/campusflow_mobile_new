@@ -387,6 +387,30 @@ export const StudentDashboardScreen: React.FC = () => {
             </View>
             <Text style={styles.actionGridButtonText}>My Fees & Receipts</Text>
           </TouchableOpacity>
+
+          {/* Action 7: Announcements */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push(ROUTES.APP.ANNOUNCEMENTS)}
+            style={[styles.actionGridCard, { borderColor: "rgba(59, 130, 246, 0.2)" }]}
+          >
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(59, 130, 246, 0.08)" }]}>
+              <Feather name="bell" size={22} color="#3B82F6" />
+            </View>
+            <Text style={styles.actionGridButtonText}>Announcements</Text>
+          </TouchableOpacity>
+
+          {/* Action 8: Library */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push(ROUTES.APP.LIBRARY)}
+            style={[styles.actionGridCard, { borderColor: "rgba(217, 119, 6, 0.2)" }]}
+          >
+            <View style={[styles.actionIconBg, { backgroundColor: "rgba(217, 119, 6, 0.08)" }]}>
+              <Feather name="book-open" size={22} color="#D97706" />
+            </View>
+            <Text style={styles.actionGridButtonText}>Library</Text>
+          </TouchableOpacity>
         </View>
       </View>
 

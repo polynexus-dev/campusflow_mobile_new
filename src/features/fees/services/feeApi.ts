@@ -23,6 +23,23 @@ export interface FeePaymentReceipt {
   invoice_number: string;
 }
 
+export interface PaymentOrder {
+  transaction_id: number;
+  gateway: string;
+  key_id: string | null;
+  order_id: string;
+  amount: string;
+  convenience_fee_amount: string;
+  total_amount: string;
+  currency: string;
+}
+
+export interface PaymentVerifyResult {
+  message: string;
+  status: string;
+  remaining_balance: string;
+}
+
 export const feeApi = {
   getInvoices: async (): Promise<FeeInvoice[]> => {
     const res = await httpClient.get("api/fees/invoices/");
@@ -31,6 +48,21 @@ export const feeApi = {
 
   getPayments: async (): Promise<FeePaymentReceipt[]> => {
     const res = await httpClient.get("api/fees/payments/");
+    return res.data;
+  },
+
+  createOrder: async (invoiceId: number): Promise<PaymentOrder> => {
+    const res = await httpClient.post("api/payments/orders/", { invoice_id: invoiceId });
+    return res.data;
+  },
+
+  verifyPayment: async (payload: {
+    transaction_id: number;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<PaymentVerifyResult> => {
+    const res = await httpClient.post("api/payments/verify/", payload);
     return res.data;
   },
 };

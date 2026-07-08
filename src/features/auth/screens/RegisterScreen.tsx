@@ -91,6 +91,7 @@ export const RegisterScreen: React.FC = () => {
   const [studentId, setStudentId] = useState("");
   const [programEnrolledIn, setProgramEnrolledIn] = useState("");
   const [departmentId, setDepartmentId] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -123,6 +124,7 @@ export const RegisterScreen: React.FC = () => {
         student_id: studentId,
         program_enrolled_in_id: programEnrolledIn,
         department_id: parseInt(departmentId, 10),
+        contact_number: contactNumber,
       });
 
       Alert.alert(
@@ -208,6 +210,15 @@ export const RegisterScreen: React.FC = () => {
             onChangeText={setStudentId}
             icon="credit-card"
             error={errors.studentId}
+          />
+
+          <CustomInput
+            label="Contact Number (Optional)"
+            placeholder="e.g. +91 9876543210"
+            value={contactNumber}
+            onChangeText={setContactNumber}
+            icon="phone"
+            keyboardType="phone-pad"
           />
 
           <View style={styles.row}>

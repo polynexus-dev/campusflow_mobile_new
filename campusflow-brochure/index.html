@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CampusFlow — The Future of Smart Campus Attendance</title>
+<title>CampusNexus — Fully Integrated College ERP & Attendance</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -659,7 +659,7 @@
     height: 100%;
     background: linear-gradient(90deg, #a855f7, #c084fc);
     border-radius: 2px;
-    animation: progress 15s linear infinite;
+    animation: progress 180s linear infinite;
     transform-origin: left;
   }
   @keyframes progress { from { width: 100%; } to { width: 0%; } }
@@ -686,6 +686,105 @@
     flex-shrink: 0;
   }
   .qr-spec strong { color: var(--text-primary); font-weight: 600; }
+
+  /* ========================================================
+     EXEC SUMMARY / PRODUCT OVERVIEW / TECH STACK (shared grid cards)
+  ======================================================== */
+  .overview-flow {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    align-items: stretch; margin-top: 56px; position: relative; z-index: 2;
+  }
+  .overview-node {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 32px 26px;
+    text-align: center;
+  }
+  .overview-node .step-icon-wrap { margin: 0 auto 18px; }
+  .overview-node h4 { font-size: 1rem; color: var(--white); margin-bottom: 10px; }
+  .overview-node p { font-size: 0.85rem; color: rgba(255,255,255,0.45); line-height: 1.65; }
+  .overview-arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(168,85,247,0.6);
+  }
+  .overview-arrow svg { width: 28px; height: 28px; }
+  @media (max-width: 900px) {
+    .overview-flow { grid-template-columns: 1fr; gap: 16px; }
+    .overview-arrow { transform: rotate(90deg); padding: 4px 0; }
+  }
+
+  /* ========================================================
+     DEVICE MOCKUPS (CSS-drawn, no external images)
+  ======================================================== */
+  .device-laptop {
+    background: linear-gradient(145deg, #1a0020, #2d0a30);
+    border-radius: 14px 14px 4px 4px;
+    padding: 14px 14px 22px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+  }
+  .device-laptop::after {
+    content: ''; display: block; height: 6px; width: 46%; margin: 10px auto 0;
+    background: rgba(255,255,255,0.1); border-radius: 0 0 6px 6px;
+  }
+  .device-screen {
+    background: var(--white); border-radius: 6px; overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .device-screen-bar {
+    display: flex; gap: 5px; padding: 9px 12px; background: #F2F0F5;
+    border-bottom: 1px solid rgba(74,21,75,0.08);
+  }
+  .device-screen-bar span { width: 8px; height: 8px; border-radius: 50%; background: rgba(74,21,75,0.18); }
+  .device-screen-body { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mock-kpi { background: #FAF8FB; border: 1px solid rgba(74,21,75,0.08); border-radius: 8px; padding: 12px; }
+  .mock-kpi .mock-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--aubergine); }
+  .mock-kpi .mock-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+  .mock-chart {
+    grid-column: 1 / -1; height: 64px; border-radius: 8px;
+    background: linear-gradient(180deg, rgba(124,48,133,0.12), rgba(124,48,133,0.02));
+    border: 1px solid rgba(74,21,75,0.08);
+    position: relative; overflow: hidden;
+  }
+  .mock-chart::before {
+    content:''; position:absolute; left:0; right:0; bottom:0; height:40%;
+    background: linear-gradient(90deg, transparent, rgba(124,48,133,0.35), transparent);
+    clip-path: polygon(0% 80%, 15% 55%, 30% 65%, 45% 30%, 60% 50%, 75% 20%, 90% 40%, 100% 25%, 100% 100%, 0% 100%);
+  }
+  .mock-map { grid-column: 1 / -1; height: 70px; border-radius: 8px; background: #EFE9F1; position: relative; overflow: hidden; }
+  .mock-map .mock-pin { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--orchid); box-shadow: 0 0 0 4px rgba(124,48,133,0.2); }
+
+  .device-phone {
+    width: 220px; margin: 0 auto;
+    background: linear-gradient(145deg, #1a0020, #2d0a30);
+    border-radius: 30px; padding: 10px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .device-phone-screen { background: var(--white); border-radius: 20px; overflow: hidden; }
+  .device-phone-notch { height: 18px; display:flex; align-items:center; justify-content:center; }
+  .device-phone-notch span { width: 50px; height: 5px; border-radius: 3px; background: rgba(74,21,75,0.15); }
+  .device-phone-body { padding: 8px 14px 18px; }
+  .phone-card { background:#FAF8FB; border:1px solid rgba(74,21,75,0.08); border-radius:10px; padding:10px; margin-bottom:8px; }
+  .phone-card .mock-lbl { font-size:0.62rem; color:var(--text-muted); }
+  .phone-card .mock-num { font-family:'Outfit', sans-serif; font-weight:700; font-size:0.95rem; color:var(--aubergine); }
+  .phone-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .phone-btn-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px; }
+  .phone-btn { aspect-ratio:1; background:linear-gradient(135deg, rgba(124,48,133,0.12), rgba(124,48,133,0.04)); border:1px solid rgba(74,21,75,0.08); border-radius:8px; }
+
+  /* ========================================================
+     ROADMAP
+  ======================================================== */
+  .roadmap { padding: 100px 0; background: var(--bg); }
+  .roadmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px; }
+  .roadmap-col { background: var(--white); border: 1px solid rgba(74,21,75,0.08); border-radius: var(--radius-lg); padding: 30px 26px; box-shadow: 0 4px 20px rgba(74,21,75,0.06); }
+  .roadmap-col .rm-phase { font-family:'Outfit', sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color: var(--orchid); margin-bottom: 16px; }
+  .roadmap-col ul { list-style:none; display:flex; flex-direction:column; gap: 14px; }
+  .roadmap-col li { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; padding-left: 18px; position: relative; }
+  .roadmap-col li::before { content:''; position:absolute; left:0; top:7px; width:6px; height:6px; border-radius:50%; background: var(--orchid); }
+  @media (max-width: 900px) { .roadmap-grid { grid-template-columns: 1fr; } }
 
   /* ========================================================
      PRICING
@@ -980,7 +1079,11 @@
 <div class="mobile-menu" id="mobileMenu">
   <button class="mobile-close" onclick="closeMobile()">&#x2715;</button>
   <a href="#features" onclick="closeMobile()">Features</a>
+  <a href="#overview" onclick="closeMobile()">Overview</a>
+  <a href="#erp-suite" onclick="closeMobile()">ERP Modules</a>
+  <a href="#tech-stack" onclick="closeMobile()">Tech Stack</a>
   <a href="#security" onclick="closeMobile()">Security</a>
+  <a href="#roadmap" onclick="closeMobile()">Roadmap</a>
   <a href="#pricing" onclick="closeMobile()">Pricing</a>
   <a href="#contact" onclick="closeMobile()">Contact</a>
   <a href="#contact" class="btn btn-primary" onclick="closeMobile()">Book a Demo</a>
@@ -997,12 +1100,14 @@
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
       </div>
-      CampusFlow
+      CampusNexus
     </div>
     <ul class="nav-links">
       <li><a href="#features">Features</a></li>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#erp-suite">ERP Modules</a></li>
       <li><a href="#security">Security</a></li>
-      <li><a href="#how">How It Works</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -1028,15 +1133,14 @@
     <div class="hero-content">
       <div class="hero-badge">
         <div class="dot"></div>
-        Now trusted by 20+ institutions across India
+        One platform for attendance, academics & campus operations
       </div>
       <h1>
         The Future of Smart<br />
-        <span class="line2">Campus Attendance.</span>
+        <span class="line2">College ERP & Attendance.</span>
       </h1>
       <p class="hero-sub">
-        Zero Proxies. Absolute Trust. Empowering modern educational institutes with automated
-        biometric liveness verification, dynamic geofencing, and encrypted proximity protocols.
+        Built to eliminate proxy attendance and unify campus operations — 19 integrated ERP modules, live face-liveness biometrics, and dynamic geofencing on one multi-tenant platform.
       </p>
       <div class="hero-ctas">
         <a href="#contact" class="btn btn-glow">
@@ -1054,23 +1158,23 @@
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
-          <div class="num">99<span>%</span></div>
-          <div class="lbl">Proxy Prevention Rate</div>
+          <div class="num">19</div>
+          <div class="lbl">Integrated ERP Modules</div>
         </div>
         <div class="stat-sep"></div>
         <div class="hero-stat">
-          <div class="num">15<span>s</span></div>
-          <div class="lbl">QR Token Rotation</div>
+          <div class="num">3<span>-angle</span></div>
+          <div class="lbl">Biometric Enrollment</div>
         </div>
         <div class="stat-sep"></div>
         <div class="hero-stat">
-          <div class="num">3<span>x</span></div>
-          <div class="lbl">Faster Roll-Call</div>
+          <div class="num">3</div>
+          <div class="lbl">Apps, One Backend</div>
         </div>
         <div class="stat-sep"></div>
         <div class="hero-stat">
-          <div class="num">0</div>
-          <div class="lbl">Raw Images Stored</div>
+          <div class="num">1</div>
+          <div class="lbl">Platform for Every Campus Op</div>
         </div>
       </div>
     </div>
@@ -1081,32 +1185,55 @@
      LOGO STRIP
 ============================================================ -->
 <div class="logo-strip">
-  <div class="logo-strip-label">Trusted by forward-thinking institutions</div>
+  <div class="logo-strip-label">Built for institutions of every size</div>
   <div class="marquee-track">
     <div class="logo-marquee" id="marquee">
-      <span class="institute-name">MIT College of Engineering</span>
-      <span class="institute-name">Pune University</span>
-      <span class="institute-name">VIT Vellore</span>
-      <span class="institute-name">SRM Institute</span>
-      <span class="institute-name">Symbiosis International</span>
-      <span class="institute-name">COEP Technological University</span>
-      <span class="institute-name">Amity University</span>
-      <span class="institute-name">Manipal Academy</span>
-      <span class="institute-name">BITS Pilani</span>
-      <span class="institute-name">Fergusson College</span>
-      <span class="institute-name">MIT College of Engineering</span>
-      <span class="institute-name">Pune University</span>
-      <span class="institute-name">VIT Vellore</span>
-      <span class="institute-name">SRM Institute</span>
-      <span class="institute-name">Symbiosis International</span>
-      <span class="institute-name">COEP Technological University</span>
-      <span class="institute-name">Amity University</span>
-      <span class="institute-name">Manipal Academy</span>
-      <span class="institute-name">BITS Pilani</span>
-      <span class="institute-name">Fergusson College</span>
+      <span class="institute-name">Engineering Colleges</span>
+      <span class="institute-name">Autonomous Universities</span>
+      <span class="institute-name">Polytechnic Institutes</span>
+      <span class="institute-name">Multi-Campus Groups</span>
+      <span class="institute-name">Arts & Science Colleges</span>
+      <span class="institute-name">Management Institutes</span>
+      <span class="institute-name">Medical Colleges</span>
+      <span class="institute-name">Deemed Universities</span>
+      <span class="institute-name">Engineering Colleges</span>
+      <span class="institute-name">Autonomous Universities</span>
+      <span class="institute-name">Polytechnic Institutes</span>
+      <span class="institute-name">Multi-Campus Groups</span>
+      <span class="institute-name">Arts & Science Colleges</span>
+      <span class="institute-name">Management Institutes</span>
+      <span class="institute-name">Medical Colleges</span>
+      <span class="institute-name">Deemed Universities</span>
     </div>
   </div>
 </div>
+
+<!-- ============================================================
+     EXECUTIVE SUMMARY
+============================================================ -->
+<section class="pain" id="summary" style="padding-top:80px;padding-bottom:80px;">
+  <div class="container">
+    <div class="section-label"><span class="tag">Executive Summary</span></div>
+    <h2 class="section-heading">One Platform, Every<br /><span class="grad-text">Campus Operation</span></h2>
+    <p class="section-sub">
+      Colleges run attendance, fees, transport, hostel, library and placements on disconnected paper and single-purpose tools. CampusNexus replaces that patchwork with one multi-tenant system spanning a mobile app, a web dashboard, and the backend that verifies every check-in.
+    </p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <h3>The Problem</h3>
+        <p>Static credentials — roll calls, printed QR codes, swipe cards — are trivially shared between students, and campus operations live in disconnected systems that don't talk to each other.</p>
+      </div>
+      <div class="pain-card">
+        <h3>The Approach</h3>
+        <p>Live face-liveness verification backed by a geofence + faculty-issued session code, on a device bound to one student — inside a full ERP covering academics, finance, transport, and support services.</p>
+      </div>
+      <div class="pain-card">
+        <h3>Who It's For</h3>
+        <p>Engineering colleges, autonomous universities, polytechnic institutes, and multi-campus groups that need one platform for every role — student, faculty, HOD, admin, and transport staff.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ============================================================
      PAIN POINTS
@@ -1131,7 +1258,7 @@
         </div>
         <h3>Proxy Attendance Epidemic</h3>
         <p>Traditional roll calls, static QR codes, and paper sign-in sheets are trivially bypassed. One student answers for many — faculty can't tell the difference in packed lecture halls of 120+ students.</p>
-        <div class="pain-stat">&#x26A0; Affects 34% of all college lectures nationwide</div>
+        <div class="pain-stat">&#x26A0; Built to close the gap static credentials leave wide open</div>
       </div>
       <div class="pain-card">
         <div class="pain-icon">
@@ -1140,7 +1267,7 @@
         </div>
         <h3>GPS & Location Spoofing</h3>
         <p>Off-the-shelf Android apps allow students to fake their GPS coordinates anywhere in the world. Standard geofence-only solutions are defeated before a class even begins.</p>
-        <div class="pain-stat">&#x26A0; 61% of geofence-only systems are routinely bypassed</div>
+        <div class="pain-stat">&#x26A0; Geofence alone isn't enough — pair it with live biometrics</div>
       </div>
       <div class="pain-card">
         <div class="pain-icon">
@@ -1149,8 +1276,8 @@
           </svg>
         </div>
         <h3>Administrative Time Drain</h3>
-        <p>Teachers waste 10–15 minutes per lecture on manual roll calls, excuse verification, and data entry. Across an academic year, that's dozens of lost teaching hours per classroom.</p>
-        <div class="pain-stat">&#x26A0; 45+ hours of teaching time lost per classroom annually</div>
+        <p>Teachers lose real teaching time to manual roll calls, excuse verification, and data entry every single lecture — time that never gets given back.</p>
+        <div class="pain-stat">&#x26A0; Designed to reclaim that time, lecture after lecture</div>
       </div>
     </div>
   </div>
@@ -1183,10 +1310,10 @@
           <span class="feat-badge badge-core">Core</span>
         </div>
         <h3>Pose-Validated Face Registration</h3>
-        <p>Students register their biometric profile by capturing three mandatory angles — Front, Left 45°, and Right 45°. Backend ML validation ensures no pre-existing identity conflicts, duplicate registrations, or low-quality captures are accepted.</p>
+        <p>Students register their biometric profile by capturing three mandatory angles — Front, Left 45°, and Right 45°. Server-side validation ensures no pre-existing identity conflicts, duplicate registrations, or low-quality captures are accepted.</p>
         <div class="feat-detail">
           <span class="feat-chip">3-angle capture</span>
-          <span class="feat-chip">ML validation</span>
+          <span class="feat-chip">server validation</span>
           <span class="feat-chip">duplicate-check</span>
         </div>
       </div>
@@ -1239,12 +1366,12 @@
           </div>
           <span class="feat-badge badge-security">Anti-Proxy</span>
         </div>
-        <h3>Rotating TOTP-QR Fallback</h3>
-        <p>When GPS is unavailable, lecturers display a cryptographically-signed QR code on-screen. Each token is generated using Django secret keys and time-bucket hashing, rotating every 15 seconds. Screenshotted QRs become invalid almost instantly.</p>
+        <h3>Session Code Fallback</h3>
+        <p>Every attendance window is anchored to a faculty-issued alphanumeric session code, cross-checked against the classroom geofence before it's accepted. If biometrics or connectivity fail, students still can't check in from outside the lecture — and can't check in without the code.</p>
         <div class="feat-detail">
-          <span class="feat-chip">15s rotation</span>
-          <span class="feat-chip">TOTP-signed</span>
-          <span class="feat-chip">offline-safe</span>
+          <span class="feat-chip">per-session code</span>
+          <span class="feat-chip">geofence cross-check</span>
+          <span class="feat-chip">connectivity-safe</span>
         </div>
       </div>
 
@@ -1316,6 +1443,300 @@
 </section>
 
 <!-- ============================================================
+     PRODUCT OVERVIEW — TRI-PLATFORM FLOW
+============================================================ -->
+<section class="how" id="overview">
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="section-label">
+      <span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);">Product Overview</span>
+    </div>
+    <h2 class="section-heading" style="color:white;">Three Apps.<br /><span class="grad-text">One Source of Truth.</span></h2>
+    <p class="section-sub">A student registering their face on the mobile app, an admin reviewing it on the web dashboard, and the backend verifying every check-in in between — all reading and writing the same data, in real time.</p>
+    <div class="overview-flow">
+      <div class="overview-node">
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        </div>
+        <h4>Mobile App</h4>
+        <p>Students and faculty register faces, mark attendance, track buses, and manage fees from a native cross-platform mobile app.</p>
+      </div>
+      <div class="overview-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="overview-node">
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h4>Backend Engine</h4>
+        <p>The backend engine verifies face embeddings, geofence and session codes, then stores everything in a tenant-isolated database schema per college.</p>
+      </div>
+      <div class="overview-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="overview-node">
+        <div class="step-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h4>Web Dashboard</h4>
+        <p>Admins, faculty and HODs manage every module — attendance, fees, payroll, hostel, transport — from a modern web dashboard with live analytics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     WEB APPLICATION SHOWCASE
+============================================================ -->
+<section class="security" id="web-app">
+  <div class="container">
+    <div class="security-inner">
+      <div class="security-content">
+        <span class="tag">Web Application</span>
+        <h2>Every Module, One<br /><span class="grad-text">Unified Dashboard</span></h2>
+        <p>The web app is where colleges run operations: real-time analytics, live bus tracking, and role-based dashboards for SaaS admins, college admins, faculty and students — built on a modern, high-performance web framework.</p>
+        <ul class="security-list">
+          <li>
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div class="sec-text"><strong>Live Analytics Dashboards</strong><span>Attendance trends, department performance, payroll and leave breakdowns, rendered as custom SVG charts.</span></div>
+          </li>
+          <li>
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="sec-text"><strong>Live Bus Tracking Map</strong><span>Interactive route map with live position polling, per-route printable/regenerable QR boarding passes.</span></div>
+          </li>
+          <li>
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+            <div class="sec-text"><strong>Multi-Tenant SaaS Admin</strong><span>Provision new colleges, subscribe modules per tenant, and manage billing rates from a dedicated SaaS admin dashboard.</span></div>
+          </li>
+        </ul>
+      </div>
+      <div class="security-visual">
+        <div class="device-laptop">
+          <div class="device-screen">
+            <div class="device-screen-bar"><span></span><span></span><span></span></div>
+            <div class="device-screen-body">
+              <div class="mock-kpi"><div class="mock-num">1,284</div><div class="mock-lbl">Students Active</div></div>
+              <div class="mock-kpi"><div class="mock-num">96%</div><div class="mock-lbl">Attendance Today</div></div>
+              <div class="mock-chart"></div>
+              <div class="mock-map"><div class="mock-pin" style="top:30%;left:40%;"></div><div class="mock-pin" style="top:60%;left:70%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     MOBILE APPLICATION SHOWCASE
+============================================================ -->
+<section class="features" id="mobile-app">
+  <div class="features-bg"></div>
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="security-inner">
+      <div class="security-visual">
+        <div class="device-phone">
+          <div class="device-phone-screen">
+            <div class="device-phone-notch"><span></span></div>
+            <div class="device-phone-body">
+              <div class="phone-card"><div class="mock-lbl">Today's Schedule</div><div class="mock-num">CS201 &middot; 10:00 AM</div></div>
+              <div class="phone-grid-2">
+                <div class="phone-card"><div class="mock-lbl">Attendance</div><div class="mock-num">92%</div></div>
+                <div class="phone-card"><div class="mock-lbl">Fee Balance</div><div class="mock-num">&#8377;0</div></div>
+              </div>
+              <div class="phone-btn-grid">
+                <div class="phone-btn"></div><div class="phone-btn"></div><div class="phone-btn"></div>
+                <div class="phone-btn"></div><div class="phone-btn"></div><div class="phone-btn"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="security-content">
+        <span class="tag" style="background:rgba(168,85,247,0.12);color:#c084fc;border-color:rgba(168,85,247,0.25);">Mobile Application</span>
+        <h2 style="color:white;">Built for Students,<br /><span class="grad-text">Faculty & Bus Crews</span></h2>
+        <p style="color:rgba(255,255,255,0.5);">A native cross-platform mobile app with role-based flows for every person on campus — no separate apps to install or maintain.</p>
+        <ul class="security-list">
+          <li style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);">
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="sec-text" style="color:rgba(255,255,255,0.7);"><strong style="color:white;">Students</strong><span style="color:rgba(255,255,255,0.45);">Face registration, liveness check-in, timetable, assignments, fee invoices &amp; receipts, live bus tracking with QR boarding.</span></div>
+          </li>
+          <li style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);">
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div class="sec-text" style="color:rgba(255,255,255,0.7);"><strong style="color:white;">Faculty & HODs</strong><span style="color:rgba(255,255,255,0.45);">3-step session control (check in → open window → share code), manual-request approvals, biometric reset console.</span></div>
+          </li>
+          <li style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);">
+            <div class="sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/></svg></div>
+            <div class="sec-text" style="color:rgba(255,255,255,0.7);"><strong style="color:white;">Bus Conductors</strong><span style="color:rgba(255,255,255,0.45);">Live GPS broadcast, boarded/expected/remaining-dues stats per stop.</span></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CAMPUS ERP SUITE
+============================================================ -->
+<section class="pain" id="erp-suite" style="background:#FAF8FB;padding-top:60px;padding-bottom:60px;">
+  <div class="container">
+    <div class="section-label"><span class="tag">Competitive Parity</span></div>
+    <h2 class="section-heading">Full Campus ERP Suite<br /><span class="grad-text">19 Integrated Modules</span></h2>
+    <p class="section-sub">
+      CampusNexus is no longer just an attendance app. We offer complete parity and features that outclass legacy ERP platforms.
+    </p>
+    <div class="pain-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Fees & Accounts Ledger</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Calculates collections automatically, showing exact balances on dynamic sub-ledger components like bus fees without manual splitting. Dynamic invoice generation and receipt printing included.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Bus Live Tracking & QR Passes</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Plots routes on an interactive live map with automated 5s polling. Dedicated Driver/Conductor console checklists and boarding QR scanners for complete transit security.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Hostel & Mess Allocations</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Manages student boarding room assignments, structural hostel block configurations, mess attendance, and payment accounts in a unified interface.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Training & Placement (TPO)</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Tracks students through multi-stage placement interviews and campus recruitment drives. Empowers coordinators with full analytics and applications tracking.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Library Circulation Manager</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Enables digital cataloguing by ISBN, authors, and copies. Keeps real-time track of books, issues, returns, and student library ledgers.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l-7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Inventory & Supplier Asset Log</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Monitors items with low-stock alerts, notifying university lab managers before stockouts. Maps categories, reorder levels, and supplier GST parameters.</p>
+      </div>
+      <div class="pain-card" style="padding:24px;">
+        <div class="pain-icon" style="width:40px;height:40px;margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#7C3085" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <h3 style="font-size:1rem;margin-bottom:8px;">Valuation & Paper Grading</h3>
+        <p style="font-size:0.82rem;line-height:1.5;">Provides a dedicated grading session interface. Assigns scanned exam papers and evaluation quotas to teachers with custom controls.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     COMPETITIVE ANALYSIS MATRIX
+============================================================ -->
+<section class="security" id="competitive-analysis" style="background:#FAF8FB;padding-top:80px;padding-bottom:80px;border-top: 1px solid rgba(74,21,75,0.06);border-bottom: 1px solid rgba(74,21,75,0.06);">
+  <div class="container">
+    <div class="section-label"><span class="tag">Market Evaluation</span></div>
+    <h2 class="section-heading" style="margin-bottom:16px;">Competitive Analysis Matrix</h2>
+    <p class="section-sub" style="margin-bottom:48px;">
+      How CampusNexus compares against traditional incumbent ERPs and custom solutions in transparency, technology, and integration capability.
+    </p>
+    
+    <div style="width:100%; overflow-x:auto; background:var(--white); border-radius:var(--radius-lg); border:1px solid rgba(74,21,75,0.08); box-shadow:var(--shadow-md); padding:24px;">
+      <table style="width:100%; border-collapse:collapse; min-width:800px; text-align:left;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--orchid); color:var(--aubergine); font-family:'Outfit', sans-serif; font-size:1.05rem; font-weight:700;">
+            <th style="padding:16px 12px; width:25%;">Feature Layer</th>
+            <th style="padding:16px 12px; color:var(--orchid); width:25%;">CampusNexus</th>
+            <th style="padding:16px 12px; width:25%;">Traditional ERP Provider A</th>
+            <th style="padding:16px 12px; width:25%;">Traditional ERP Provider B</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.92rem; color:var(--text-primary);">
+          <tr style="border-bottom:1px solid rgba(74,21,75,0.06); transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">Pricing Transparency</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Transparent student-centric rate (₹60/mo or ₹600/yr). SMTP setup is 100% FREE.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Opaque pricing. Requires custom sales proposal / consultation. Extra charges for SMTP.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">High enterprise setup costs and recurring corporate licensing fees. Flat pricing for SMTP.</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(74,21,75,0.06); transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">Biometric Anti-Proxy</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Active 3-angle pose challenge liveness check & hardware fingerprint binding.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Basic manual attendance registry or static barcode/QR scans (no proxy liveness protection).</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Traditional workflows focusing on static inputs or standalone bio-devices.</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(74,21,75,0.06); transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">Transit live Tracking</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Live bus map route plotting, 5s automated polling, driver/conductor console checklists.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Basic transport database tracking, lacking real-time GPS map plotting and scanners.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Traditional transport module; legacy console controls, lack of high-refresh live passenger scanner integration.</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(74,21,75,0.06); transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">User Interface & UX</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Modern, mobile-first responsive web dashboards with interactive, thin-scrollbar lists.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Standard administrative views focused on manual back-office data entry.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Cluttered legacy design architecture; steep learning curves for new faculty/students.</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(74,21,75,0.06); transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">Accreditation Support</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Instant, dynamic report exports (PDF/CSV) tailored for NAAC criteria reports.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Standard reports requiring manual data aggregation for compliance reports.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Extensive features, but requires long manual workflows to compile dynamic audit paths.</td>
+          </tr>
+          <tr style="transition:background-color 0.2s;">
+            <td style="padding:18px 12px; font-weight:600;">Deployment & SLA</td>
+            <td style="padding:18px 12px; color:var(--orchid); font-weight:600;">Instant cloud tenant provisioning; zero hardware footprint required. SLA-backed.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Lengthy consult stages and custom local development cycles.</td>
+            <td style="padding:18px 12px; color:var(--text-muted);">Heavy setup overheads requiring on-premise local servers and specialized local IT teams.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     TECHNOLOGY STACK
+============================================================ -->
+<section class="pain" id="tech-stack">
+  <div class="container">
+    <div class="section-label"><span class="tag">Platform Architecture</span></div>
+    <h2 class="section-heading">Built on a Modern,<br /><span class="grad-text">Production-Grade Platform</span></h2>
+    <p class="section-sub">Three integrated layers, one unified platform — every component chosen for real-time performance and multi-tenant isolation.</p>
+    <div class="pain-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+      <div class="pain-card">
+        <h3>Backend</h3>
+        <p style="margin-bottom:16px;">Enterprise-grade REST API framework, multi-tenant via schema-per-tenant isolation, secure token auth, and advanced biometric verification engine.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">REST API</span>
+          <span class="feat-chip">Enterprise Database</span>
+          <span class="feat-chip">In-Memory Cache</span>
+          <span class="feat-chip">Real-Time Engine</span>
+          <span class="feat-chip">Biometric AI</span>
+          <span class="feat-chip">Containerised</span>
+        </div>
+      </div>
+      <div class="pain-card">
+        <h3>Web Application</h3>
+        <p style="margin-bottom:16px;">Modern single-page application with a component-based architecture, utility-first styling, and a fully custom UI — no external UI kit dependency.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">SPA Framework</span>
+          <span class="feat-chip">Fast Build Tool</span>
+          <span class="feat-chip">Custom UI System</span>
+          <span class="feat-chip">Interactive Maps</span>
+          <span class="feat-chip">Secure API Client</span>
+        </div>
+      </div>
+      <div class="pain-card">
+        <h3>Mobile Application</h3>
+        <p style="margin-bottom:16px;">Cross-platform native app with file-based routing, typed end-to-end, built for both students and staff on one binary.</p>
+        <div class="feat-detail">
+          <span class="feat-chip">Cross-Platform SDK</span>
+          <span class="feat-chip">File-Based Router</span>
+          <span class="feat-chip">Type-Safe</span>
+          <span class="feat-chip">State Management</span>
+          <span class="feat-chip">Async Data Layer</span>
+          <span class="feat-chip">Camera / Location</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
      SECURITY BLUEPRINT
 ============================================================ -->
 <section class="security" id="security">
@@ -1328,7 +1749,7 @@
         </span>
         <h2>Privacy-First Security,<br /><span class="grad-text">Engineered for Trust</span></h2>
         <p>
-          Every layer of the CampusFlow security stack is designed not just to prevent fraud, but to do so in a way that respects student privacy, satisfies data protection regulations, and provides irrefutable audit evidence.
+          Every layer of the CampusNexus security stack is designed not just to prevent fraud, but to do so in a way that respects student privacy, satisfies data protection regulations, and provides irrefutable audit evidence.
         </p>
         <ul class="security-list">
           <li>
@@ -1349,8 +1770,8 @@
               </svg>
             </div>
             <div class="sec-text">
-              <strong>Cryptographic TOTP Tokens</strong>
-              <span>QR codes are signed with HMAC-SHA256 using Django's secret key salted with a 15-second time bucket. Expired tokens are mathematically invalid — no server-side check needed.</span>
+              <strong>Geofenced Session Codes</strong>
+              <span>Every lecture session is bound to a live GPS anchor set by the faculty member, plus a session code they control. Both checks run server-side before attendance is ever marked.</span>
             </div>
           </li>
           <li>
@@ -1360,46 +1781,46 @@
               </svg>
             </div>
             <div class="sec-text">
-              <strong>GDPR-Compliant Facial Hashes</strong>
-              <span>CampusFlow never stores raw facial imagery. Face landmark meshes are computed on-device, transmitted as floating-point vectors, matched server-side, and the source image is discarded within 30 seconds.</span>
+              <strong>Embedding-Based Face Matching</strong>
+              <span>Faces are converted to high-dimensional biometric embeddings for matching — not stored and compared as raw photos. Flagged or failed verification attempts are retained separately for human review, with full audit visibility.</span>
             </div>
           </li>
         </ul>
       </div>
       <div class="security-visual">
         <div class="sec-card">
-          <div class="sec-card-title">// CAMPUSFLOW_SECURITY_STACK v2.1</div>
+          <div class="sec-card-title">// CAMPUSNEXUS_SECURITY_STACK v3.0</div>
           <div class="sec-timeline">
             <div class="tl-item">
               <div class="tl-dot tl-dot-1">01</div>
               <div class="tl-body">
-                <div class="tl-label">Device Fingerprinting</div>
-                <div class="tl-desc">Hardware ID bound at registration via encrypted hardware attestation API.</div>
-                <div class="tl-code">device_id = sha256(imei + android_id + build_serial)</div>
+                <div class="tl-label">Device Lock</div>
+                <div class="tl-desc">Each student profile is bound to one registered device ID at enrollment.</div>
+                <div class="tl-code">device verified against enrolled profile</div>
               </div>
             </div>
             <div class="tl-item">
               <div class="tl-dot tl-dot-2">02</div>
               <div class="tl-body">
                 <div class="tl-label">Liveness Challenge</div>
-                <div class="tl-desc">Random 3-of-6 motion challenge issued per session. Cannot be pre-recorded.</div>
-                <div class="tl-code">challenges = random.sample(MOTION_SET, k=3)</div>
+                <div class="tl-desc">One of four motion challenges (blink, nod, turn left, turn right) issued per attempt. Cannot be pre-recorded.</div>
+                <div class="tl-code">random challenge issued per attempt</div>
               </div>
             </div>
             <div class="tl-item">
               <div class="tl-dot tl-dot-3">03</div>
               <div class="tl-body">
-                <div class="tl-label">Facial Hash Matching</div>
-                <div class="tl-desc">128-dim embedding cosine similarity threshold &gt; 0.82. Raw image purged post-match.</div>
-                <div class="tl-code">similarity = cosine(embed_live, embed_stored) &gt; 0.82</div>
+                <div class="tl-label">Biometric Embedding Match</div>
+                <div class="tl-desc">High-dimensional embedding compared against the student's 3 registered angles.</div>
+                <div class="tl-code">similarity score ≥ confidence threshold</div>
               </div>
             </div>
             <div class="tl-item">
               <div class="tl-dot tl-dot-4">04</div>
               <div class="tl-body">
-                <div class="tl-label">Geofence + TOTP Crosscheck</div>
+                <div class="tl-label">Geofence + Session Code Crosscheck</div>
                 <div class="tl-desc">Both layers verified server-side. Either failure blocks attendance marking.</div>
-                <div class="tl-code">token = HMAC(secret, floor(time()/15)) == submitted</div>
+                <div class="tl-code">location + session code both verified server-side</div>
               </div>
             </div>
           </div>
@@ -1430,7 +1851,7 @@
           </svg>
         </div>
         <h4>Lecturer Checks In</h4>
-        <p>The lecturer opens CampusFlow, taps "Start Session." Their live GPS anchors the classroom boundary in real-time.</p>
+        <p>The lecturer opens CampusNexus, taps "Start Session." Their live GPS anchors the classroom boundary in real-time.</p>
       </div>
       <div class="how-step">
         <div class="step-num">Step 02</div>
@@ -1474,75 +1895,80 @@
     <div class="qr-inner">
       <div class="qr-widget">
         <div class="qr-label">
-          <span>PROXIMITY_TOKEN_DISPLAY</span>
+          <span>SESSION_CODE_DISPLAY</span>
           <div class="qr-status"><div class="qr-dot"></div><span style="color:#4ade80;font-size:0.72rem;">ACTIVE SESSION</span></div>
         </div>
-        <div class="qr-box">
-          <!-- Inline QR-like SVG pattern -->
-          <svg class="qr-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <rect width="120" height="120" fill="white"/>
-            <!-- Finder patterns -->
-            <rect x="10" y="10" width="30" height="30" rx="3" fill="#4a154b"/>
-            <rect x="14" y="14" width="22" height="22" rx="2" fill="white"/>
-            <rect x="18" y="18" width="14" height="14" rx="1" fill="#4a154b"/>
-            <rect x="80" y="10" width="30" height="30" rx="3" fill="#4a154b"/>
-            <rect x="84" y="14" width="22" height="22" rx="2" fill="white"/>
-            <rect x="88" y="18" width="14" height="14" rx="1" fill="#4a154b"/>
-            <rect x="10" y="80" width="30" height="30" rx="3" fill="#4a154b"/>
-            <rect x="14" y="84" width="22" height="22" rx="2" fill="white"/>
-            <rect x="18" y="88" width="14" height="14" rx="1" fill="#4a154b"/>
-            <!-- Data modules (decorative pattern) -->
-            <g fill="#4a154b" opacity="0.9">
-              <rect x="50" y="10" width="6" height="6"/><rect x="58" y="10" width="6" height="6"/>
-              <rect x="66" y="10" width="6" height="6"/><rect x="50" y="18" width="6" height="6"/>
-              <rect x="66" y="18" width="6" height="6"/><rect x="58" y="26" width="6" height="6"/>
-              <rect x="10" y="50" width="6" height="6"/><rect x="18" y="50" width="6" height="6"/>
-              <rect x="26" y="58" width="6" height="6"/><rect x="10" y="66" width="6" height="6"/>
-              <rect x="42" y="42" width="6" height="6"/><rect x="50" y="42" width="6" height="6"/>
-              <rect x="58" y="42" width="6" height="6"/><rect x="66" y="42" width="6" height="6"/>
-              <rect x="74" y="42" width="6" height="6"/><rect x="42" y="50" width="6" height="6"/>
-              <rect x="58" y="50" width="6" height="6"/><rect x="74" y="50" width="6" height="6"/>
-              <rect x="42" y="58" width="6" height="6"/><rect x="50" y="58" width="6" height="6"/>
-              <rect x="66" y="58" width="6" height="6"/><rect x="74" y="58" width="6" height="6"/>
-              <rect x="42" y="66" width="6" height="6"/><rect x="58" y="66" width="6" height="6"/>
-              <rect x="74" y="66" width="6" height="6"/><rect x="42" y="74" width="6" height="6"/>
-              <rect x="50" y="74" width="6" height="6"/><rect x="58" y="74" width="6" height="6"/>
-              <rect x="66" y="74" width="6" height="6"/><rect x="74" y="74" width="6" height="6"/>
-              <rect x="82" y="50" width="6" height="6"/><rect x="90" y="50" width="6" height="6"/>
-              <rect x="98" y="50" width="6" height="6"/><rect x="82" y="58" width="6" height="6"/>
-              <rect x="98" y="66" width="6" height="6"/><rect x="90" y="74" width="6" height="6"/>
-              <rect x="10" y="74" width="6" height="6"/><rect x="26" y="74" width="6" height="6"/>
-              <rect x="18" y="66" width="6" height="6"/>
-            </g>
-          </svg>
-          <div class="qr-scan-line"></div>
+        <div class="qr-box" style="flex-direction:column;">
+          <span style="font-family:'JetBrains Mono', monospace; font-size:2.1rem; font-weight:700; color:#4a154b; letter-spacing:0.12em;" id="sessionCodeDisplay">7K2 9QX</span>
+          <span style="font-family:'Outfit', sans-serif; font-size:0.68rem; color:rgba(74,21,75,0.5); letter-spacing:0.08em; margin-top:6px;">SHOW ON PROJECTOR</span>
         </div>
         <div class="qr-timer">
           <div class="qr-timer-label">
-            <span>Token expires in</span>
-            <span class="countdown" id="countdown">15s</span>
+            <span>Attendance window closes in</span>
+            <span class="countdown" id="countdown">3:00</span>
           </div>
           <div class="qr-progress-bar">
-            <div class="qr-progress-fill" id="progressFill"></div>
+            <div class="qr-progress-fill" id="progressFill" style="animation-duration:180s;"></div>
           </div>
         </div>
         <div class="qr-token" id="tokenDisplay">
-          HMAC·SHA256 · 7f3a9c2b·e1d8f405·92bc3a7e·<br/>
-          bucket=<span id="timeBucket">1750415280</span> · sig=<span id="sigDisplay">a7f2...9c3b</span>
+          geofence: 22m radius &middot; lat=21.1458, lng=79.0882<br/>
+          code required + within-radius check &middot; both server-verified
         </div>
       </div>
       <div class="qr-info">
-        <span class="tag">Proximity Fallback</span>
-        <h2>Rotating TOTP-QR:<br /><span class="grad-text">Screenshots Become Useless</span></h2>
+        <span class="tag">Session Fallback</span>
+        <h2>Session Code + Geofence:<br /><span class="grad-text">Verified Two Ways, Not Guessed</span></h2>
         <p>
-          When GPS is unavailable or inconsistent, the lecturer displays our cryptographically-signed QR code on the projector screen. Each token is bound to a 15-second time bucket — making any shared screenshot functionally expired before it can be reused.
+          Every attendance window pairs a faculty-issued session code with a live geofence anchored to the lecturer's GPS position. A student needs both the code and physical proximity to the classroom — neither one alone is enough.
         </p>
         <div class="qr-specs">
-          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>15-second rotation window</strong> — tokens auto-invalidate server-side</span></div>
-          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>HMAC-SHA256 signing</strong> — unforgeable without the Django secret key</span></div>
-          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Time-bucket binding</strong> — past tokens are permanently invalid</span></div>
-          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>One-use enforcement</strong> — token reuse detected and blocked server-side</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Faculty-controlled window</strong> — code is only valid while the session is open</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Geofence cross-check</strong> — radius set live from the lecturer's own GPS check-in</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Manual request path</strong> — students can appeal with a reason if a check fails, subject to faculty approval</span></div>
+          <div class="qr-spec"><div class="qr-spec-dot"></div><span><strong>Device-bound</strong> — checked against the student's one registered device</span></div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ROADMAP
+============================================================ -->
+<section class="roadmap" id="roadmap">
+  <div class="container">
+    <div class="section-label"><span class="tag">Coming Next</span></div>
+    <h2 class="section-heading">Where CampusNexus<br /><span class="grad-text">Is Headed</span></h2>
+    <p class="section-sub">What's shipped today, and what we're building next — clearly separated so you always know what you're evaluating.</p>
+    <div class="roadmap-grid">
+      <div class="roadmap-col">
+        <div class="rm-phase">Shipped Today</div>
+        <ul>
+          <li>Biometric liveness attendance + geofence/session-code fallback</li>
+          <li>19-module campus ERP (fees, payroll, leave, hostel, library, TPO, valuation)</li>
+          <li>Live bus GPS tracking with QR boarding</li>
+          <li>Multi-tenant SaaS admin console + immutable audit log</li>
+        </ul>
+      </div>
+      <div class="roadmap-col">
+        <div class="rm-phase">In Progress</div>
+        <ul>
+          <li>Deeper analytics: cross-department benchmarking and predictive attendance risk flags</li>
+          <li>Expanded accreditation report templates (NAAC/AICTE criteria mapping)</li>
+          <li>Bus route optimization suggestions from historical trail data</li>
+        </ul>
+      </div>
+      <div class="roadmap-col">
+        <div class="rm-phase">On the Roadmap</div>
+        <ul>
+          <li>Mobile push notifications for attendance windows and fee due dates</li>
+          <li>Offline-first attendance capture with deferred sync</li>
+          <li>Parent/guardian companion access for fees and bus tracking</li>
+          <li>QR-based visitor gate pass and student early-leave pass, verified at the gate by security</li>
+          <li>Automated semester and course-end clearance, aggregated across fees, library, hostel and inventory dues</li>
+          <li>Exam hall entry verification with answer-sheet binding, for invigilator-operated devices</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -1553,40 +1979,40 @@
 ============================================================ -->
 <section class="testimonials">
   <div class="container">
-    <div class="section-label"><span class="tag">Testimonials</span></div>
-    <h2 class="section-heading">Trusted by Academic<br /><span class="grad-text">Leaders Across India</span></h2>
-    <p class="section-sub">Real feedback from deans, HODs, and department coordinators who've deployed CampusFlow at scale.</p>
+    <div class="section-label"><span class="tag">What Campus Leaders Look For</span></div>
+    <h2 class="section-heading">Built Around What<br /><span class="grad-text">Academic Leadership Actually Needs</span></h2>
+    <p class="section-sub">The priorities we hear most often from deans, HODs, and IT directors evaluating a campus attendance platform — and how CampusNexus is built to answer them.</p>
     <div class="testimonials-grid">
       <div class="testi-card">
         <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="testi-quote">"We eliminated proxy attendance completely within the first week of rollout. Our faculty got back 12–15 minutes of teaching time per lecture. The ROI was immediate and undeniable."</p>
+        <p class="testi-quote">"We need faculty to get lecture time back, not spend it on roll call — and we need attendance no student can share with a friend."</p>
         <div class="testi-author">
-          <div class="testi-avatar">DK</div>
+          <div class="testi-avatar">DA</div>
           <div>
-            <div class="testi-name">Dr. Dinesh Kulkarni</div>
-            <div class="testi-role">Dean of Academics, MIT College of Engineering</div>
+            <div class="testi-name">Dean of Academics</div>
+            <div class="testi-role">Engineering College</div>
           </div>
         </div>
       </div>
       <div class="testi-card">
         <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="testi-quote">"The HOD Device Reset Console gave our department full control over biometric registrations. The audit logs have been invaluable for our ISO and NAAC accreditation documentation."</p>
+        <p class="testi-quote">"Our department needs full control over biometric resets, and an audit trail we can hand straight to an accreditation reviewer."</p>
         <div class="testi-author">
-          <div class="testi-avatar">PS</div>
+          <div class="testi-avatar">HOD</div>
           <div>
-            <div class="testi-name">Prof. Priya Sharma</div>
-            <div class="testi-role">HOD, Computer Engineering, COEP Technological University</div>
+            <div class="testi-name">Head of Department</div>
+            <div class="testi-role">Computer Engineering</div>
           </div>
         </div>
       </div>
       <div class="testi-card">
         <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="testi-quote">"The liveness verification is what sold us. Students had already found ways around our previous QR-only system within days of launch. CampusFlow made that impossible."</p>
+        <p class="testi-quote">"A QR-only or roll-call system gets gamed within a week. We wanted verification that actually confirms the student is present."</p>
         <div class="testi-author">
-          <div class="testi-avatar">RM</div>
+          <div class="testi-avatar">IT</div>
           <div>
-            <div class="testi-name">Rajesh Mehta</div>
-            <div class="testi-role">Director of Technology, Symbiosis International University</div>
+            <div class="testi-name">Director of Technology</div>
+            <div class="testi-role">Multi-Campus Institution</div>
           </div>
         </div>
       </div>
@@ -1608,65 +2034,62 @@
     <p class="section-sub">No hidden fees. No per-swipe charges. One annual license covers your entire institution.</p>
     <div class="pricing-grid">
 
-      <!-- Standard -->
+      <!-- Standard (Core Monthly) -->
       <div class="pricing-card">
-        <div class="plan-tier">Standard</div>
-        <div class="plan-name">Campus Starter</div>
-        <div class="plan-desc">For colleges with up to 3 departments and 2,000 students. Full anti-proxy core stack included.</div>
+        <div class="plan-tier">Core ERP</div>
+        <div class="plan-name">Core Monthly Plan</div>
+        <div class="plan-desc">Flexible month-to-month subscription. Access to all 19 integrated ERP modules and biometric features.</div>
         <div class="plan-price">
-          <div class="amount"><span class="currency">₹</span>1,49,999<span class="period">/year</span></div>
+          <div class="amount"><span class="currency">₹</span>60<span class="period">/ student / month</span></div>
         </div>
         <ul class="plan-features">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Up to 2,000 student accounts</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Face registration + liveness check</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Dynamic geofencing</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Rotating QR fallback</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Analytics dashboard</li>
-          <li class="muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>HOD console (add-on)</li>
-          <li class="muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom integrations</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>All 19 ERP Modules included</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Face registration + liveness checks</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Dynamic geofencing & rotating QR</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom domain email services (SMTP)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Real-time analytics dashboards</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Multi-tenant student registries</li>
         </ul>
         <a href="#contact" class="btn btn-outline" style="width:100%;justify-content:center;">Get Started</a>
       </div>
 
-      <!-- Enterprise (featured) -->
+      <!-- Enterprise (Core Annual) -->
       <div class="pricing-card featured">
-        <div class="featured-tag">&#x2B50; Most Popular</div>
-        <div class="plan-tier">Enterprise</div>
-        <div class="plan-name">Campus Pro</div>
-        <div class="plan-desc">For full-scale universities with multiple departments, branches, and 10,000+ students.</div>
+        <div class="featured-tag">⭐ Save 17% over Monthly</div>
+        <div class="plan-tier">Core ERP</div>
+        <div class="plan-name">Core Annual Saver</div>
+        <div class="plan-desc">Best value for full-scale universities. Commit annually and unlock priority updates and premium support.</div>
         <div class="plan-price">
-          <div class="amount"><span class="currency">₹</span>3,99,999<span class="period">/year</span></div>
+          <div class="amount"><span class="currency">₹</span>600<span class="period">/ student / year</span></div>
         </div>
         <ul class="plan-features">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Unlimited student accounts</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Full biometric anti-proxy stack</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Multi-campus geofencing</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>HOD device reset console</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>NAAC/AICTE report exports</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ERP/SIS integration</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Includes all features of Monthly</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Equivalent to ₹50 / student / month</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Launch Special: 1:20 Free Faculty Ratio</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Extra staff users at ₹99/mo</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>NAAC/AICTE accreditation report exports</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Priority updates & support desk</li>
         </ul>
         <a href="#contact" class="btn btn-primary" style="width:100%;justify-content:center;">Book a Demo</a>
       </div>
 
-      <!-- Custom -->
+      <!-- Add-on (Bus GPS) -->
       <div class="pricing-card">
-        <div class="plan-tier">Custom</div>
-        <div class="plan-name">Campus License</div>
-        <div class="plan-desc">For autonomous university systems, state boards, or institutions needing on-premise deployment.</div>
+        <div class="plan-tier">Add-on</div>
+        <div class="plan-name">Bus GPS Tracking</div>
+        <div class="plan-desc">For campuses with transport operations. Seamlessly tracks coordinates, conductor scanners, and route ledgers.</div>
         <div class="plan-price">
-          <div class="custom-text">Custom Quote</div>
+          <div class="amount"><span class="currency">₹</span>10<span class="period">/ student / month</span></div>
         </div>
         <ul class="plan-features">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>On-premise or private cloud</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Perpetual source license</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom branding & white-label</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>SLA-backed 24/7 support</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Custom compliance auditing</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Multi-tenant architecture</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Government procurement ready</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Live transit route plotting on interactive maps</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Automated 5s coordinates polling</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Driver/Conductor console & checklist</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Boarding QR scanners & dynamic verification</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Detailed transit fee metrics & ledgers</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Printable student QR passes</li>
         </ul>
-        <a href="#contact" class="btn btn-ghost" style="width:100%;justify-content:center;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15);">Contact Sales</a>
+        <a href="#contact" class="btn btn-ghost" style="width:100%;justify-content:center;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15);">Get Bus Add-on</a>
       </div>
 
     </div>
@@ -1674,13 +2097,13 @@
     <!-- ROI Strip -->
     <div class="roi-strip">
       <div class="roi-item">
-        <div class="roi-num">45h</div>
-        <div class="roi-lbl">Teaching hours saved per classroom per year</div>
+        <div class="roi-num">Live</div>
+        <div class="roi-lbl">Roll call replaced with real-time verification</div>
       </div>
       <div class="roi-divider"></div>
       <div class="roi-item">
-        <div class="roi-num">99%</div>
-        <div class="roi-lbl">Reduction in proxy attendance incidents</div>
+        <div class="roi-num">2-Factor</div>
+        <div class="roi-lbl">Biometric + geofence verification, every session</div>
       </div>
       <div class="roi-divider"></div>
       <div class="roi-item">
@@ -1717,13 +2140,7 @@
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            <span>hello@campusflow.in</span>
-          </div>
-          <div class="contact-detail">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1.18h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 5.85 5.85l1.17-1.17a2 2 0 0 1 2.11-.45c.91.33 1.85.56 2.81.69a2 2 0 0 1 1.72 2.04z"/>
-            </svg>
-            <span>+91 98765 43210</span>
+            <span>hello@campusnexus.in</span>
           </div>
           <div class="contact-detail">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1804,7 +2221,7 @@
               <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
             </svg>
           </div>
-          CampusFlow
+          CampusNexus
         </div>
         <p>The modern campus attendance ecosystem built from the ground up to eliminate proxy attendance through multi-layer biometric verification.</p>
       </div>
@@ -1837,11 +2254,11 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 CampusFlow Technologies Pvt. Ltd. All rights reserved.</p>
+      <p>&copy; 2026 CampusNexus Technologies. All rights reserved.</p>
       <div class="footer-badges">
-        <span class="footer-badge">GDPR Compliant</span>
-        <span class="footer-badge">ISO 27001</span>
-        <span class="footer-badge">NAAC Ready</span>
+        <span class="footer-badge">Privacy-by-Design</span>
+        <span class="footer-badge">Tenant-Isolated Data</span>
+        <span class="footer-badge">NAAC-Ready Reports</span>
       </div>
     </div>
   </div>
@@ -1867,34 +2284,21 @@
     document.body.style.overflow = '';
   }
 
-  /* QR countdown timer */
-  let timeLeft = 15;
+  /* Session window countdown timer */
+  let timeLeft = 180;
   function updateCountdown() {
     timeLeft--;
     if (timeLeft <= 0) {
-      timeLeft = 15;
-      rotateToken();
+      timeLeft = 180;
+      document.getElementById('progressFill').style.animation = 'none';
+      document.getElementById('progressFill').offsetHeight; // reflow
+      document.getElementById('progressFill').style.animation = 'progress 180s linear infinite';
     }
-    document.getElementById('countdown').textContent = timeLeft + 's';
+    const mins = Math.floor(timeLeft / 60);
+    const secs = String(timeLeft % 60).padStart(2, '0');
+    document.getElementById('countdown').textContent = mins + ':' + secs;
   }
   setInterval(updateCountdown, 1000);
-
-  /* Token rotation simulation */
-  const tokenParts = [
-    ['a7f2', '9c3b', '1750415280'], ['3d8e', 'f120', '1750415295'],
-    ['b5c1', '7a4e', '1750415310'], ['e9f3', '2d7c', '1750415325'],
-    ['4a8b', 'c6e1', '1750415340'], ['7f3a', '9c2b', '1750415355'],
-  ];
-  let tokenIdx = 0;
-  function rotateToken() {
-    tokenIdx = (tokenIdx + 1) % tokenParts.length;
-    const [s1, s2, bucket] = tokenParts[tokenIdx];
-    document.getElementById('sigDisplay').textContent = s1 + '...' + s2;
-    document.getElementById('timeBucket').textContent = bucket;
-    document.getElementById('progressFill').style.animation = 'none';
-    document.getElementById('progressFill').offsetHeight; // reflow
-    document.getElementById('progressFill').style.animation = 'progress 15s linear infinite';
-  }
 
   /* Smooth scroll for anchor links */
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {

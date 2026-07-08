@@ -16,6 +16,11 @@ export const ROUTES = {
     LECTURER_HISTORY: "/(student)/lecturer-history" as const,
     BUS_TRACKING: "/(student)/bus-tracking" as const,
     FEES: "/(student)/student-fees" as const,
+    PAY_INVOICE: "/(student)/pay-invoice" as const,
+    ANNOUNCEMENTS: "/(student)/announcements" as const,
+    LEAVE: "/(student)/leave" as const,
+    LIBRARY: "/(student)/library" as const,
+    PROFILE_STANDALONE: "/(student)/my-profile" as const,
   },
 } as const;
 

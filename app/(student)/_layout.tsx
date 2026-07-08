@@ -12,6 +12,11 @@ export default function AppLayout() {
       <Stack.Screen name="assignments/[id]" />
       <Stack.Screen name="bus-tracking" />
       <Stack.Screen name="student-fees" />
+      <Stack.Screen name="pay-invoice" />
+      <Stack.Screen name="announcements" />
+      <Stack.Screen name="leave" />
+      <Stack.Screen name="library" />
+      <Stack.Screen name="my-profile" />
     </Stack>
   );
 }

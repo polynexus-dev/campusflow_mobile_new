@@ -68,6 +68,10 @@ export const BusMap: React.FC<BusMapProps> = ({ stops, busLocation }) => {
       border: 3px solid #ffffff;
       box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 2px 8px rgba(0,0,0,0.3);
     }
+    /* Glide the bus icon between GPS fixes instead of snapping */
+    .custom-bus-marker-wrap {
+      transition: transform 0.9s linear;
+    }
   </style>
 </head>
 <body>
@@ -117,7 +121,7 @@ export const BusMap: React.FC<BusMapProps> = ({ stops, busLocation }) => {
       if (!busMarker) {
         var busIcon = L.divIcon({
           html: '<div class="custom-bus-marker"><\/div>',
-          className: '',
+          className: 'custom-bus-marker-wrap',
           iconSize: [20, 20],
           iconAnchor: [10, 10]
         });
@@ -125,7 +129,7 @@ export const BusMap: React.FC<BusMapProps> = ({ stops, busLocation }) => {
       } else {
         busMarker.setLatLng(pos);
       }
-      map.panTo(pos);
+      map.panTo(pos, { animate: true, duration: 0.9 });
     };
 
     // Initial positioning check

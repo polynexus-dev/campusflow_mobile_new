@@ -8,7 +8,7 @@ export const leaveApi = {
 
   getMyLeaves: async () => {
     const response = await httpClient.get("/leave/my/");
-    return response.data;
+    return response.data.requests || [];
   },
 
   getPendingRequests: async () => {

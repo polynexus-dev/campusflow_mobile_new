@@ -9,6 +9,9 @@ import {
   ActivityIndicator,
   Platform,
   StatusBar,
+  Modal,
+  TextInput,
+  Image,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
@@ -151,6 +154,9 @@ export const ProfileScreen: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [newContactNumber, setNewContactNumber] = useState("");
+  const [updatingContact, setUpdatingContact] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -179,6 +185,28 @@ export const ProfileScreen: React.FC = () => {
     };
     fetchProfile();
   }, []);
+
+  const handleEditContact = () => {
+    setNewContactNumber(profile?.contact_number || "");
+    setEditModalVisible(true);
+  };
+
+  const handleSaveContact = async () => {
+    setUpdatingContact(true);
+    try {
+      await httpClient.put("/user/", {
+        contact_number: newContactNumber,
+      });
+      setProfile((prev) => prev ? { ...prev, contact_number: newContactNumber } : null);
+      setEditModalVisible(false);
+      Alert.alert("Success", "Contact number updated successfully.");
+    } catch (err: any) {
+      logError(err, "ProfileScreen:handleSaveContact");
+      Alert.alert("Error", err.response?.data?.detail || err.message || "Failed to update contact number.");
+    } finally {
+      setUpdatingContact(false);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert("Sign Out", "Are you sure you want to log out?", [
@@ -231,7 +259,7 @@ export const ProfileScreen: React.FC = () => {
 
   // Set up stats values dynamically
   const stat1Label = isStudent ? "Semester" : "Position";
-  const stat1Value = isStudent ? (profile?.current_semester_year || "—") : "Faculty";
+  const stat1Value = isStudent ? (profile?.current_semester_year || "—") : (profile?.role || user?.role || "—");
 
   const stat2Label = isStudent ? "Section" : "College";
   const stat2Value = isStudent ? (profile?.section_division || "—") : (profile?.tenant || "—");
@@ -269,7 +297,11 @@ export const ProfileScreen: React.FC = () => {
               </Text>
               {profile?.tenant && (
                 <View style={styles.tenantBadge}>
-                  <Ionicons name="business-outline" size={13} color="rgba(255,255,255,0.8)" style={{ marginRight: 4 }} />
+                  {user?.tenant_logo ? (
+                    <Image source={{ uri: user.tenant_logo }} style={styles.tenantLogo} />
+                  ) : (
+                    <Ionicons name="business-outline" size={13} color="rgba(255,255,255,0.8)" style={{ marginRight: 4 }} />
+                  )}
                   <Text style={styles.tenantBadgeText} numberOfLines={1}>
                     {profile.tenant}
                   </Text>
@@ -332,7 +364,8 @@ export const ProfileScreen: React.FC = () => {
           <MenuItem
             icon="call-outline"
             label="Contact Number"
-            value={profile?.contact_number}
+            value={profile?.contact_number || "Not Provided"}
+            onPress={handleEditContact}
           />
 
           {/* Security details for student */}
@@ -387,6 +420,53 @@ export const ProfileScreen: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Edit Contact Number Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Update Contact Number</Text>
+            <Text style={styles.modalSub}>Enter your mobile/phone number below.</Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g. +91 9876543210"
+              placeholderTextColor={COLORS.textMuted}
+              value={newContactNumber}
+              onChangeText={setNewContactNumber}
+              keyboardType="phone-pad"
+              autoFocus={true}
+            />
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => setEditModalVisible(false)}
+                disabled={updatingContact}
+              >
+                <Text style={styles.modalBtnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnSave]}
+                onPress={handleSaveContact}
+                disabled={updatingContact}
+              >
+                {updatingContact ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Text style={styles.modalBtnSaveText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -474,6 +554,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 6,
+  },
+  tenantLogo: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    marginRight: 5,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   tenantBadgeText: {
     fontSize: 12,
@@ -612,6 +699,77 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginTop: 32,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalContainer: {
+    width: "100%",
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 24,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.text,
+    marginBottom: 6,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+    fontWeight: "500",
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: COLORS.text,
+    backgroundColor: "#F8FAFC",
+    marginBottom: 20,
+    fontWeight: "600",
+  },
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  modalBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  modalBtnCancel: {
+    backgroundColor: "#F1F5F9",
+  },
+  modalBtnCancelText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  modalBtnSave: {
+    backgroundColor: COLORS.primary,
+    minWidth: 80,
+  },
+  modalBtnSaveText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
 

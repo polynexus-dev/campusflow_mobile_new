@@ -9,15 +9,19 @@ import {
   Alert,
   FlatList,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { feeApi, FeeInvoice, FeePaymentReceipt } from "../services/feeApi";
 import { COLORS } from "@/shared/theme/colors";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+import { ROUTES } from "@/constants/route";
 
 export const StudentFeesScreen: React.FC = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"dues" | "receipts">("dues");
   const [invoices, setInvoices] = useState<FeeInvoice[]>([]);
   const [payments, setPayments] = useState<FeePaymentReceipt[]>([]);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<number | null>(null);
 
   const fetchData = async () => {
     try {
@@ -38,6 +42,31 @@ export const StudentFeesScreen: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handlePayNow = async (invoice: FeeInvoice) => {
+    setPayingInvoiceId(invoice.id);
+    try {
+      const order = await feeApi.createOrder(invoice.id);
+      if (!order.key_id) {
+        Alert.alert("Payments Unavailable", "Online payments are not configured for your college yet.");
+        return;
+      }
+      router.push({
+        pathname: ROUTES.APP.PAY_INVOICE,
+        params: {
+          transactionId: String(order.transaction_id),
+          keyId: order.key_id,
+          orderId: order.order_id,
+          amount: order.total_amount,
+          currency: order.currency,
+        },
+      });
+    } catch (err: any) {
+      Alert.alert("Could Not Start Payment", err.message || "Please try again.");
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
 
   const renderInvoiceItem = ({ item }: { item: FeeInvoice }) => (
     <View style={styles.card}>
@@ -88,6 +117,20 @@ export const StudentFeesScreen: React.FC = () => {
       </View>
 
       <Text style={styles.dueDate}>Due Date: {new Date(item.due_date).toLocaleDateString()}</Text>
+
+      {item.status !== "paid" && (
+        <TouchableOpacity
+          style={styles.payNowButton}
+          onPress={() => handlePayNow(item)}
+          disabled={payingInvoiceId === item.id}
+        >
+          {payingInvoiceId === item.id ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.payNowButtonText}>Pay Now</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -289,6 +332,18 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: 12,
     textAlign: "right",
+  },
+  payNowButton: {
+    marginTop: 14,
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  payNowButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
   metaText: {
     fontSize: 12,

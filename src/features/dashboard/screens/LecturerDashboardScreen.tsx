@@ -451,6 +451,22 @@ export const LecturerDashboardScreen: React.FC = () => {
           <Text style={styles.historyCardArrow}>❯</Text>
         </TouchableOpacity>
 
+        {/* Leave Management Link Card */}
+        <TouchableOpacity
+          style={styles.historyCardLink}
+          onPress={() => router.push(ROUTES.APP.LEAVE)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.historyCardContent}>
+            <Text style={styles.historyCardEmoji}>🗓️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.historyCardTitle}>Leave Management</Text>
+              <Text style={styles.historyCardSubtitle}>Apply for leave and check your balance</Text>
+            </View>
+          </View>
+          <Text style={styles.historyCardArrow}>❯</Text>
+        </TouchableOpacity>
+
         {/* HOD Biometric Reset Portal Card Link */}
         {isHodOrAdmin && (
           <TouchableOpacity
