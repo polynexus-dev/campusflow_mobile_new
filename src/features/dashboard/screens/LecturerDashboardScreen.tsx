@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
+import { hasBusConductorAccess } from "@/utils/busAccess";
 import { ROUTES } from "@/constants/route";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 
@@ -489,21 +490,24 @@ export const LecturerDashboardScreen: React.FC = () => {
           </TouchableOpacity>
         )}
 
-        {/* Conductor Bus Tracking Card Link */}
-        <TouchableOpacity
-          style={[styles.historyCardLink, { backgroundColor: "#EAB308", marginTop: -12 }]}
-          onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.historyCardContent}>
-            <Text style={styles.historyCardEmoji}>🚌</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.historyCardTitle}>Bus Route Conductor Panel</Text>
-              <Text style={styles.historyCardSubtitle}>Start live GPS stream and track stop passenger tallies</Text>
+        {/* Conductor Bus Tracking Card Link — only for Faculty actually
+            holding the bus driver/conductor additional charge */}
+        {hasBusConductorAccess(user) && (
+          <TouchableOpacity
+            style={[styles.historyCardLink, { backgroundColor: "#EAB308", marginTop: -12 }]}
+            onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.historyCardContent}>
+              <Text style={styles.historyCardEmoji}>🚌</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.historyCardTitle}>Bus Route Conductor Panel</Text>
+                <Text style={styles.historyCardSubtitle}>Start live GPS stream and track stop passenger tallies</Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.historyCardArrow}>❯</Text>
-        </TouchableOpacity>
+            <Text style={styles.historyCardArrow}>❯</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Section title */}
         <Text style={styles.sectionTitle}>Today's Lectures</Text>

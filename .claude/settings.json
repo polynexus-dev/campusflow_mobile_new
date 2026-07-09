@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Read(//d/Polynexus/Servers/Campusnexus/Backend/CampusFlow_backend/campusflow/**)",
+      "Read(//d/Polynexus/Servers/Campusnexus/Backend/CampusFlow_backend/campusflow/campusflow_app/**)",
+      "Read(//d/Polynexus/Servers/Campusnexus/Backend/CampusFlow_backend/campusflow/campusflow_app/views/**)"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }

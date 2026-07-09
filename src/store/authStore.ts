@@ -11,6 +11,13 @@ interface UserProfile {
   consent_given?: boolean;
   tenant_name?: string;
   tenant_logo?: string | null;
+  // "Additional charge" — set only when the backend has assigned this user
+  // (typically a Support Staff employee) as the driver/conductor of an
+  // active BusRoute. Independent of `role`, since drivers/conductors are
+  // still base-role Support Staff employees.
+  is_bus_driver?: boolean;
+  is_bus_conductor?: boolean;
+  bus_route_id?: number | null;
   student_profile?: {
     student_id: string;
     is_face_registered: boolean;

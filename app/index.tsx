@@ -1,12 +1,13 @@
 import React from "react";
 import { Redirect } from "expo-router";
 import { useAuthStore } from "@store/authStore";
+import { hasBusConductorAccess } from "@/utils/busAccess";
 
 export default function Index() {
   const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated) {
-    if (user?.role === "Support Staff" || user?.role === "staff") {
+    if (hasBusConductorAccess(user)) {
       return <Redirect href="/(student)/bus-tracking" />;
     }
     return <Redirect href="/(student)/(tabs)/dashboard" />;

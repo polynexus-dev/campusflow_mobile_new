@@ -131,6 +131,9 @@ export const LoginScreen: React.FC = () => {
         consent_given: response.consent_given ?? true,
         tenant_name: response.tenant?.name || "your institution",
         tenant_logo: response.tenant?.logo || null,
+        is_bus_driver: response.is_bus_driver ?? false,
+        is_bus_conductor: response.is_bus_conductor ?? false,
+        bus_route_id: response.bus_route_id ?? null,
         student_profile: response.profile ? {
           student_id: response.profile.student_id || "",
           is_face_registered: response.profile.is_face_registered ?? false,

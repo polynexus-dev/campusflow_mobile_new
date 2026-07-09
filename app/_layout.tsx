@@ -5,6 +5,7 @@ import { useAuthStore } from "@store/authStore";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { COLORS } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
+import { hasBusConductorAccess } from "@/utils/busAccess";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ function RootLayoutNav() {
       } else {
         // Redirect to dashboard if logged in and accessing auth or consent routes
         if (inConsentGroup || !inAppGroup) {
-          if (user?.role === "Support Staff" || user?.role === "staff") {
+          if (hasBusConductorAccess(user)) {
             router.replace("/(student)/bus-tracking");
           } else {
             router.replace("/(student)/(tabs)/dashboard");
