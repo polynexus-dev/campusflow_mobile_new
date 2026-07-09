@@ -41,7 +41,7 @@ httpClient.interceptors.request.use(
 // Interceptor for normalizing errors
 httpClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const statusCode: number = error?.response?.status ?? 500;
     const endpoint: string = error?.config?.url ?? "unknown";
     let message = "An unexpected error occurred.";
@@ -69,6 +69,18 @@ httpClient.interceptors.response.use(
     const responseData = error?.response?.data;
     const apiError = ApiError.fromResponse(statusCode, message, endpoint, responseData);
     logError(apiError, `httpClient:response [${endpoint}]`);
+
+    // Handle session expiry / token invalidation
+    if (statusCode === 401) {
+      const isLoginRequest = endpoint.includes("/login/");
+      if (!isLoginRequest) {
+        try {
+          await useAuthStore.getState().logout();
+        } catch (logoutError) {
+          console.error("Failed to automatically logout after 401 error", logoutError);
+        }
+      }
+    }
 
     return Promise.reject(apiError);
   }

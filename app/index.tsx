@@ -8,7 +8,7 @@ export default function Index() {
 
   if (isAuthenticated) {
     if (hasBusConductorAccess(user)) {
-      return <Redirect href="/(student)/bus-tracking" />;
+      return <Redirect href="/(student)/(driver-tabs)/dashboard" />;
     }
     return <Redirect href="/(student)/(tabs)/dashboard" />;
   }

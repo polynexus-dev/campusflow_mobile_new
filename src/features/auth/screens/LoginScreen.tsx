@@ -8,6 +8,7 @@ import { useAuthStore } from "@store/authStore";
 import { authApi } from "../api/authApi";
 import { ROUTES } from "@/constants/route";
 import { Feather } from "@expo/vector-icons";
+import { hasBusConductorAccess } from "@/utils/busAccess";
 
 interface CustomInputProps {
   label: string;
@@ -145,8 +146,15 @@ export const LoginScreen: React.FC = () => {
 
       Alert.alert("Success", `Welcome back, ${userProfile.username}!`);
 
-      // Route immediately to App space
-      router.replace(ROUTES.APP.DASHBOARD);
+      // Bus driver/conductor accounts get their own trimmed 3-tab Home /
+      // Passengers / Profile experience instead of the student tabs — same
+      // gate app/index.tsx and app/_layout.tsx use, since this redirect
+      // fires before either of those ever gets a chance to run.
+      if (hasBusConductorAccess(userProfile)) {
+        router.replace(ROUTES.APP.DRIVER_DASHBOARD);
+      } else {
+        router.replace(ROUTES.APP.DASHBOARD);
+      }
     } catch (err: any) {
       console.error("Login failure", err);
       // Reset domain/schema if login failed so it doesn't get stuck

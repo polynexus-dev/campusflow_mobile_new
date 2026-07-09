@@ -9,7 +9,7 @@ import {
   Alert,
   Switch,
 } from "react-native";
-import { busApi, DriverDashboardData, BusStop, BusPassenger, TripStats } from "../services/busApi";
+import { busApi, DriverDashboardData, BusStop, TripStats } from "../services/busApi";
 import { COLORS } from "@/shared/theme/colors";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -194,14 +194,9 @@ export const ConductorScreen: React.FC = () => {
       showHeader={true}
       showBack={false}
       right={
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => router.push(ROUTES.APP.LEAVE)} hitSlop={10}>
-            <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push(ROUTES.APP.PROFILE_STANDALONE)} hitSlop={10}>
-            <Ionicons name="person-circle-outline" size={22} color={COLORS.primary} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => router.push(ROUTES.APP.LEAVE)} hitSlop={10}>
+          <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
       }
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -210,7 +205,7 @@ export const ConductorScreen: React.FC = () => {
       {/* Route Info */}
       <View style={styles.card}>
         <Text style={styles.label}>Active Route</Text>
-        <Text style={styles.routeName}>{dashboard.routeName || dashboard.route_name}</Text>
+        <Text style={styles.routeName}>{dashboard.route_name}</Text>
       </View>
 
       {/* Trip Controller Panel */}
@@ -247,45 +242,53 @@ export const ConductorScreen: React.FC = () => {
       {tripStats && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Trips</Text>
-          <View style={styles.metricsGrid}>
-            <View style={[styles.metricCard, { borderLeftColor: COLORS.primary }]}>
-              <Text style={styles.metricVal}>{tripStats.trips_this_week}</Text>
-              <Text style={styles.metricLabel}>Trips This Week</Text>
+          <View style={styles.periodStatsRow}>
+            <View style={styles.periodStatCol}>
+              <Text style={styles.periodStatLabel}>This Week</Text>
+              <Text style={styles.periodStatValue}>
+                {tripStats.trips_this_week} {tripStats.trips_this_week === 1 ? "trip" : "trips"}
+              </Text>
+              <Text style={styles.periodStatSub}>{tripStats.distance_this_week_km} km</Text>
             </View>
-            <View style={[styles.metricCard, { borderLeftColor: COLORS.primary }]}>
-              <Text style={styles.metricVal}>{tripStats.distance_this_week_km} km</Text>
-              <Text style={styles.metricLabel}>Distance This Week</Text>
-            </View>
-            <View style={[styles.metricCard, { borderLeftColor: "#7C3AED" }]}>
-              <Text style={[styles.metricVal, { color: "#7C3AED" }]}>{tripStats.trips_this_month}</Text>
-              <Text style={styles.metricLabel}>Trips This Month</Text>
-            </View>
-            <View style={[styles.metricCard, { borderLeftColor: "#7C3AED" }]}>
-              <Text style={[styles.metricVal, { color: "#7C3AED" }]}>{tripStats.distance_this_month_km} km</Text>
-              <Text style={styles.metricLabel}>Distance This Month</Text>
+            <View style={styles.periodStatDivider} />
+            <View style={styles.periodStatCol}>
+              <Text style={styles.periodStatLabel}>This Month</Text>
+              <Text style={[styles.periodStatValue, { color: "#7C3AED" }]}>
+                {tripStats.trips_this_month} {tripStats.trips_this_month === 1 ? "trip" : "trips"}
+              </Text>
+              <Text style={styles.periodStatSub}>{tripStats.distance_this_month_km} km</Text>
             </View>
           </View>
         </View>
       )}
 
-      {/* Metrics Row */}
-      <View style={styles.metricsGrid}>
-        <View style={[styles.metricCard, { borderLeftColor: COLORS.primary }]}>
-          <Text style={styles.metricVal}>{dashboard.expected_total}</Text>
-          <Text style={styles.metricLabel}>Expected Students</Text>
+      {/* Today's Boarding */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Today's Boarding</Text>
+        <View style={styles.periodStatsRow}>
+          <View style={styles.periodStatCol}>
+            <Text style={styles.periodStatLabel}>Expected</Text>
+            <Text style={styles.periodStatValue}>{dashboard.expected_total}</Text>
+          </View>
+          <View style={styles.periodStatDivider} />
+          <View style={styles.periodStatCol}>
+            <Text style={styles.periodStatLabel}>Boarded</Text>
+            <Text style={[styles.periodStatValue, { color: "#2e7d32" }]}>{dashboard.boarded_total}</Text>
+          </View>
+          <View style={styles.periodStatDivider} />
+          <View style={styles.periodStatCol}>
+            <Text style={styles.periodStatLabel}>Absent</Text>
+            <Text style={[styles.periodStatValue, { color: "#64748B" }]}>{dashboard.absent_total}</Text>
+          </View>
         </View>
-        <View style={[styles.metricCard, { borderLeftColor: "#2e7d32" }]}>
-          <Text style={[styles.metricVal, { color: "#2e7d32" }]}>{dashboard.boarded_total}</Text>
-          <Text style={styles.metricLabel}>Boarded (Scanned)</Text>
-        </View>
-        <View style={[styles.metricCard, { borderLeftColor: "#94A3B8" }]}>
-          <Text style={[styles.metricVal, { color: "#64748B" }]}>{dashboard.absent_total}</Text>
-          <Text style={styles.metricLabel}>Absent</Text>
-        </View>
-        <View style={[styles.metricCard, { borderLeftColor: "#c62828" }]}>
-          <Text style={[styles.metricVal, { color: "#c62828" }]}>₹{dashboard.total_pending_bus_dues}</Text>
-          <Text style={styles.metricLabel}>Pending Bus Dues</Text>
-        </View>
+        {Number(dashboard.total_pending_bus_dues) > 0 && (
+          <View style={styles.duesBanner}>
+            <Ionicons name="alert-circle" size={18} color="#c62828" />
+            <Text style={styles.duesBannerText}>
+              ₹{dashboard.total_pending_bus_dues} pending in bus dues across your route
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Stops Timeline */}
@@ -310,38 +313,25 @@ export const ConductorScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Passenger Roster — students carry a bus fee balance, faculty/staff
-          charges are payroll-deducted so there's nothing to chase there */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Passenger Roster</Text>
-        <View style={styles.roster}>
-          {dashboard.passengers.map((p: BusPassenger) => (
-            <View key={p.user_id} style={styles.rosterRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rosterName}>{p.name}</Text>
-                <Text style={styles.rosterMeta}>
-                  {p.role} · {p.boarding_stop}
-                </Text>
-              </View>
-              <View style={{ alignItems: "flex-end", gap: 4 }}>
-                <Text style={p.boarded_today ? styles.rosterBoarded : styles.rosterNotBoarded}>
-                  {p.boarded_today ? "Boarded" : "Not boarded"}
-                </Text>
-                {p.fee_status === "pending" ? (
-                  <Text style={styles.feePending}>Pending ₹{p.balance_fee}</Text>
-                ) : p.fee_status === "paid" ? (
-                  <Text style={styles.feePaid}>Fees Paid</Text>
-                ) : (
-                  <Text style={styles.feePayroll}>Payroll Deduction</Text>
-                )}
-              </View>
-            </View>
-          ))}
-          {dashboard.passengers.length === 0 && (
-            <Text style={styles.rosterEmpty}>No subscribers on this route yet.</Text>
-          )}
+      {/* Passenger Roster now lives on its own tab — full list gets long
+          fast on routes with 20-30+ subscribers, so it doesn't belong
+          embedded in the scrolling dashboard alongside everything else. */}
+      <TouchableOpacity
+        style={styles.rosterLinkCard}
+        onPress={() => router.push(ROUTES.APP.DRIVER_PASSENGERS)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.rosterLinkContent}>
+          <Ionicons name="people-outline" size={22} color={COLORS.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Passenger Roster</Text>
+            <Text style={styles.cardSubtitle}>
+              {dashboard.passengers.length} subscriber{dashboard.passengers.length === 1 ? "" : "s"} on this route
+            </Text>
+          </View>
         </View>
-      </View>
+        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+      </TouchableOpacity>
     </ScreenWrapper>
   );
 };
@@ -350,11 +340,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC",
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
   },
   content: {
     padding: 16,
@@ -379,11 +364,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "between",
-    alignItems: "center",
-  },
   label: {
     fontSize: 12,
     color: "#64748B",
@@ -406,30 +386,54 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: 2,
   },
-  metricsGrid: {
+  periodStatsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    alignItems: "center",
+    marginTop: 14,
   },
-  metricCard: {
-    flexGrow: 1,
-    minWidth: "45%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderLeftWidth: 4,
+  periodStatCol: {
+    flex: 1,
+    alignItems: "center",
   },
-  metricVal: {
+  periodStatDivider: {
+    width: 1,
+    height: 44,
+    backgroundColor: "#E2E8F0",
+  },
+  periodStatLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  periodStatValue: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#0F172A",
   },
-  metricLabel: {
-    fontSize: 10,
+  periodStatSub: {
+    fontSize: 12,
     color: "#64748B",
-    marginTop: 4,
+    marginTop: 2,
+  },
+  duesBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(198, 40, 40, 0.06)",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(198, 40, 40, 0.15)",
+    padding: 12,
+    marginTop: 16,
+  },
+  duesBannerText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#c62828",
   },
   timeline: {
     marginTop: 16,
@@ -468,57 +472,21 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: 2,
   },
-  roster: {
-    gap: 12,
-  },
-  rosterRow: {
+  rosterLinkCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
   },
-  rosterName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1E293B",
-  },
-  rosterMeta: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 2,
-  },
-  rosterBoarded: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#2e7d32",
-  },
-  rosterNotBoarded: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#94A3B8",
-  },
-  feePending: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#c62828",
-  },
-  feePaid: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#2e7d32",
-  },
-  feePayroll: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-  },
-  rosterEmpty: {
-    fontSize: 13,
-    color: "#94A3B8",
-    textAlign: "center",
-    paddingVertical: 12,
+  rosterLinkContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
   },
   tripActionsRow: {
     marginTop: 16,

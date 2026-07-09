@@ -21,6 +21,9 @@ export const ROUTES = {
     LEAVE: "/(student)/leave" as const,
     LIBRARY: "/(student)/library" as const,
     PROFILE_STANDALONE: "/(student)/my-profile" as const,
+    DRIVER_DASHBOARD: "/(student)/(driver-tabs)/dashboard" as const,
+    DRIVER_PASSENGERS: "/(student)/(driver-tabs)/passengers" as const,
+    DRIVER_PROFILE: "/(student)/(driver-tabs)/profile" as const,
   },
 } as const;
 

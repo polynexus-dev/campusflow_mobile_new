@@ -41,7 +41,7 @@ function RootLayoutNav() {
         // Redirect to dashboard if logged in and accessing auth or consent routes
         if (inConsentGroup || !inAppGroup) {
           if (hasBusConductorAccess(user)) {
-            router.replace("/(student)/bus-tracking");
+            router.replace("/(student)/(driver-tabs)/dashboard");
           } else {
             router.replace("/(student)/(tabs)/dashboard");
           }
