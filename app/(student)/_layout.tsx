@@ -5,7 +5,6 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(driver-tabs)" />
       <Stack.Screen name="register-face" />
       <Stack.Screen name="mark-attendance" />
       <Stack.Screen name="attendance-history" />

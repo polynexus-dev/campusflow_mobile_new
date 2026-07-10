@@ -22,7 +22,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAppGroup = segments[0] === "(student)";
+    const inAppGroup = segments[0] === "(student)" || segments[0] === "(driver)";
     const inConsentGroup = segments[0] === "(consent)";
 
     if (!isAuthenticated) {
@@ -38,17 +38,20 @@ function RootLayoutNav() {
           router.replace("/(consent)/consent");
         }
       } else {
-        // Redirect to dashboard if logged in and accessing auth or consent routes
-        if (inConsentGroup || !inAppGroup) {
-          if (hasBusConductorAccess(user)) {
-            router.replace("/(student)/(driver-tabs)/dashboard");
-          } else {
+        // Enforce strict role-based route separation
+        const isDriver = hasBusConductorAccess(user);
+        if (isDriver) {
+          if (segments[0] !== "(driver)" && segments[0] !== "(consent)") {
+            router.replace("/(driver)/(tabs)/dashboard");
+          }
+        } else {
+          if (segments[0] !== "(student)" && segments[0] !== "(consent)") {
             router.replace("/(student)/(tabs)/dashboard");
           }
         }
       }
     }
-  }, [isAuthenticated, isLoading, segments, user?.consent_given]);
+  }, [isAuthenticated, isLoading, segments, user, user?.consent_given]);
 
   if (isLoading) {
     return (
@@ -62,6 +65,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(student)" />
+      <Stack.Screen name="(driver)" />
       <Stack.Screen name="(consent)" />
     </Stack>
   );

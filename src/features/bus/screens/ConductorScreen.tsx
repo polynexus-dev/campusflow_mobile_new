@@ -194,7 +194,7 @@ export const ConductorScreen: React.FC = () => {
       showHeader={true}
       showBack={false}
       right={
-        <TouchableOpacity onPress={() => router.push(ROUTES.APP.LEAVE)} hitSlop={10}>
+        <TouchableOpacity onPress={() => router.push(ROUTES.APP.DRIVER_LEAVE)} hitSlop={10}>
           <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
         </TouchableOpacity>
       }
