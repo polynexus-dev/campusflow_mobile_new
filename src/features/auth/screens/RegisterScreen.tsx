@@ -128,6 +128,8 @@ export const RegisterScreen: React.FC = () => {
         program_enrolled_in_id: programEnrolledIn,
         department_id: parseInt(departmentId, 10),
         contact_number: contactNumber,
+        consent_given: true,
+        date_of_birth: "2000-01-01",
       });
 
       Alert.alert(
