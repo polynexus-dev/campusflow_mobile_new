@@ -10,6 +10,7 @@ interface ButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  className?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({

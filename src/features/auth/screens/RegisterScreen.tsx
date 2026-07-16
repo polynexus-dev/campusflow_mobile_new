@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, Alert, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { COLORS } from "@/shared/theme/colors";
@@ -7,6 +7,10 @@ import { Button } from "@/shared/ui/Button";
 import { authApi } from "../api/authApi";
 import { ROUTES } from "@/constants/route";
 import { Feather } from "@expo/vector-icons";
+import { cssInterop } from "nativewind";
+
+// Register custom Button component for NativeWind support
+cssInterop(Button, { className: "style" });
 
 interface CustomInputProps {
   label: string;
@@ -18,7 +22,7 @@ interface CustomInputProps {
   error?: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
-  style?: any;
+  className?: string;
 }
 
 const CustomInput: React.FC<CustomInputProps> = ({
@@ -31,24 +35,23 @@ const CustomInput: React.FC<CustomInputProps> = ({
   error,
   autoCapitalize = "none",
   keyboardType = "default",
-  style,
+  className,
 }) => {
   const [isSecure, setIsSecure] = useState(secureTextEntry);
 
   return (
-    <View style={[styles.inputWrapper, style]}>
-      <Text style={styles.inputLabel}>{label}</Text>
+    <View className={`mb-[18px] w-full ${className || ""}`}>
+      <Text className="text-[13px] font-bold text-textSecondary mb-2 tracking-[0.2px]">{label}</Text>
       <View
-        style={[
-          styles.inputContainer,
-          error ? styles.inputContainerError : null,
-        ]}
+        className={`h-[54px] rounded-[14px] bg-[#F8FAFC] border-[1.5px] border-[#E2E8F0] px-4 flex-row items-center ${
+          error ? "border-error" : ""
+        }`}
       >
         <Feather
           name={icon}
           size={18}
           color={COLORS.primary}
-          style={styles.inputLeftIcon}
+          style={{ marginRight: 12 }}
         />
         <TextInput
           placeholder={placeholder}
@@ -58,13 +61,13 @@ const CustomInput: React.FC<CustomInputProps> = ({
           secureTextEntry={isSecure}
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
-          style={styles.textInput}
+          className="flex-1 h-full text-textMain text-[15px] font-medium p-0"
         />
         {secureTextEntry && (
           <TouchableOpacity
             onPress={() => setIsSecure(!isSecure)}
             activeOpacity={0.7}
-            style={styles.inputRightIcon}
+            className="py-2.5 pl-2.5"
           >
             <Feather
               name={isSecure ? "eye-off" : "eye"}
@@ -74,7 +77,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      {error && <Text style={styles.inputErrorText}>{error}</Text>}
+      {error && <Text className="text-error text-xs font-semibold mt-1.5 ml-1">{error}</Text>}
     </View>
   );
 };
@@ -150,29 +153,33 @@ export const RegisterScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
+      className="flex-1 bg-primary relative"
     >
       <StatusBar style="light" />
-      
-      {/* Ambient background glow elements for a premium layout feel */}
-      <View style={styles.glowTopRight} />
-      <View style={styles.glowBottomLeft} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Register as a CampusNexus Student</Text>
+      {/* Ambient background glow elements for a premium layout feel */}
+      <View className="absolute -top-[100px] -right-[100px] w-[350px] h-[350px] rounded-[175px] bg-secondary/15 -z-10" />
+      <View className="absolute -bottom-[120px] -left-[120px] w-[320px] h-[320px] rounded-[160px] bg-accent/18 -z-10" />
+
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName={`grow p-6 pb-16 ${Platform.OS === "ios" ? "pt-16" : "pt-12"}`}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="items-center mb-7">
+          <Text className="text-[32px] font-black text-white tracking-[1.2px]">Create Account</Text>
+          <Text className="text-sm text-white/70 mt-1.5 font-semibold tracking-[0.5px]">Register as a CampusNexus Student</Text>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.row}>
+        <View className="bg-surface rounded-[28px] p-6 border border-white/15 shadow-2xl mb-5">
+          <View className="flex-row w-full">
             <CustomInput
               label="First Name"
               placeholder="John"
               value={firstName}
               onChangeText={setFirstName}
               icon="user"
-              style={{ flex: 1, marginRight: 8 }}
+              className="flex-1 mr-2"
             />
             <CustomInput
               label="Last Name"
@@ -180,7 +187,7 @@ export const RegisterScreen: React.FC = () => {
               value={lastName}
               onChangeText={setLastName}
               icon="user"
-              style={{ flex: 1, marginLeft: 8 }}
+              className="flex-1 ml-2"
             />
           </View>
 
@@ -221,7 +228,7 @@ export const RegisterScreen: React.FC = () => {
             keyboardType="phone-pad"
           />
 
-          <View style={styles.row}>
+          <View className="flex-row w-full">
             <CustomInput
               label="Department ID"
               placeholder="e.g. 1"
@@ -229,7 +236,7 @@ export const RegisterScreen: React.FC = () => {
               onChangeText={setDepartmentId}
               icon="grid"
               keyboardType="numeric"
-              style={{ flex: 1, marginRight: 8 }}
+              className="flex-1 mr-2"
               error={errors.departmentId}
             />
             <CustomInput
@@ -238,7 +245,7 @@ export const RegisterScreen: React.FC = () => {
               value={programEnrolledIn}
               onChangeText={setProgramEnrolledIn}
               icon="award"
-              style={{ flex: 1, marginLeft: 8 }}
+              className="flex-1 ml-2"
               error={errors.programEnrolledIn}
             />
           </View>
@@ -267,13 +274,13 @@ export const RegisterScreen: React.FC = () => {
             title="Register Account"
             onPress={handleRegister}
             loading={loading}
-            style={styles.button}
+            className="mt-2 rounded-[14px] h-[54px] shadow-lg shadow-primary"
           />
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already registered? </Text>
+          <View className="flex-row justify-center mt-6">
+            <Text className="text-textSecondary text-sm font-medium">Already registered? </Text>
             <Text
-              style={styles.footerLink}
+              className="text-primary text-sm font-bold"
               onPress={() => router.push(ROUTES.AUTH.LOGIN)}
             >
               Log In
@@ -284,146 +291,5 @@ export const RegisterScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.primary, // Deep purple brand background
-    position: "relative",
-  },
-  glowTopRight: {
-    position: "absolute",
-    top: -100,
-    right: -100,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: COLORS.secondary,
-    opacity: 0.15,
-    zIndex: -1,
-  },
-  glowBottomLeft: {
-    position: "absolute",
-    bottom: -120,
-    left: -120,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: COLORS.accent,
-    opacity: 0.18,
-    zIndex: -1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: Platform.OS === "ios" ? 64 : 48,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: COLORS.white,
-    letterSpacing: 1.2,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginTop: 6,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 28,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    marginBottom: 20,
-  },
-  row: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  inputWrapper: {
-    marginBottom: 18,
-    width: "100%",
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.2,
-  },
-  inputContainer: {
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inputContainerError: {
-    borderColor: COLORS.error,
-  },
-  inputLeftIcon: {
-    marginRight: 12,
-  },
-  textInput: {
-    flex: 1,
-    height: "100%",
-    color: COLORS.text,
-    fontSize: 15,
-    fontWeight: "500",
-    padding: 0,
-  },
-  inputRightIcon: {
-    paddingVertical: 10,
-    paddingLeft: 10,
-  },
-  inputErrorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 6,
-    marginLeft: 4,
-  },
-  button: {
-    marginTop: 8,
-    borderRadius: 14,
-    height: 54,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  footerText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  footerLink: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});
 
 export default RegisterScreen;
