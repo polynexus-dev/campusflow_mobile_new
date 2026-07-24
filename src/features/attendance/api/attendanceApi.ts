@@ -3,11 +3,7 @@ import httpClient from "@services/api/httpClient";
 export const attendanceApi = {
   registerFace: async (formData: FormData) => {
     // Multipart upload containing front, left, right image files
-    const response = await httpClient.post("/register-face/", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await httpClient.post("/register-face/", formData);
     return response.data;
   },
 
@@ -19,11 +15,7 @@ export const attendanceApi = {
 
   markAttendance: async (formData: FormData) => {
     // Submit live photo, baseline photo (photo_prev), challenge_id, lecture_id
-    const response = await httpClient.post("/mark-attendance/", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await httpClient.post("/mark-attendance/", formData);
     return response.data;
   },
 

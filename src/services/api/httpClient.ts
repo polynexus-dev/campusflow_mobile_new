@@ -31,6 +31,11 @@ httpClient.interceptors.request.use(
       config.headers['X-Tenant'] = collegeSchema;
     }
 
+    // Auto-remove static Content-Type header for FormData so React Native/Axios generates boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => {
