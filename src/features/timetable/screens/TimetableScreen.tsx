@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
 import { timetableApi } from "../api/timetableApi";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+import { ROUTES } from "@/constants/route";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -100,7 +101,17 @@ export const TimetableScreen: React.FC = () => {
             </View>
           ) : (
             filteredSchedules.map((item) => (
-              <View key={item.id} style={styles.scheduleCard}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.scheduleCard}
+                activeOpacity={0.7}
+                onPress={() => {
+                  router.push({
+                    pathname: ROUTES.APP.MARK_ATTENDANCE,
+                    params: { lectureId: item.session_id || item.lecture_id || item.lecture || item.id }
+                  });
+                }}
+              >
                 <View style={styles.cardHeader}>
                   <Text style={styles.courseCode}>{item.course_code}</Text>
                   <View style={styles.timeTag}>
@@ -126,7 +137,7 @@ export const TimetableScreen: React.FC = () => {
                     <Text style={styles.infoVal}>{item.faculty_name || "Staff"}</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </ScrollView>

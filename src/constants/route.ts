@@ -17,6 +17,7 @@ export const ROUTES = {
     BUS_TRACKING: "/(student)/bus-tracking" as const,
     FEES: "/(student)/student-fees" as const,
     PAY_INVOICE: "/(student)/pay-invoice" as const,
+    SUBMIT_PAYMENT: "/(student)/submitPayment" as const,
     ANNOUNCEMENTS: "/(student)/announcements" as const,
     LEAVE: "/(student)/leave" as const,
     LIBRARY: "/(student)/library" as const,

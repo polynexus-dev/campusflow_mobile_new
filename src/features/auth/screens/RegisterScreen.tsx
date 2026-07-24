@@ -95,19 +95,26 @@ export const RegisterScreen: React.FC = () => {
   const [programEnrolledIn, setProgramEnrolledIn] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [contactNumber, setContactNumber] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
+    if (!firstName) nextErrors.firstName = "First name is required";
+    if (!lastName) nextErrors.lastName = "Last name is required";
     if (!username) nextErrors.username = "Username is required";
     if (!email) nextErrors.email = "Email is required";
     else if (!email.includes("@")) nextErrors.email = "Enter a valid email";
+    if (!studentId) nextErrors.studentId = "Student ID is required";
+    if (!contactNumber) nextErrors.contactNumber = "Contact number is required";
+    if (!departmentId) nextErrors.departmentId = "Department ID is required";
+    if (!programEnrolledIn) nextErrors.programEnrolledIn = "Program ID is required";
+    if (!dateOfBirth) nextErrors.dateOfBirth = "Date of birth is required";
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) nextErrors.dateOfBirth = "Use YYYY-MM-DD format";
     if (!password) nextErrors.password = "Password is required";
     if (password !== password2) nextErrors.password2 = "Passwords do not match";
-    if (!studentId) nextErrors.studentId = "Student ID is required";
-    if (!programEnrolledIn) nextErrors.programEnrolledIn = "Program ID is required";
-    if (!departmentId) nextErrors.departmentId = "Department ID is required";
+    
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -115,9 +122,9 @@ export const RegisterScreen: React.FC = () => {
   const handleRegister = async () => {
     if (!validate()) return;
     setLoading(true);
-
+ 
     try {
-      await authApi.registerStudent({
+      const response = await authApi.registerStudent({
         username,
         email,
         password,
@@ -129,22 +136,36 @@ export const RegisterScreen: React.FC = () => {
         department_id: parseInt(departmentId, 10),
         contact_number: contactNumber,
         consent_given: true,
-        date_of_birth: "2000-01-01",
+        date_of_birth: dateOfBirth,
+        is_demo_tenant: true,
       });
 
-      Alert.alert(
-        "Registration Successful",
-        "An activation OTP has been sent to your email address.",
-        [
-          {
-            text: "Verify Account",
-            onPress: () => router.push({
-              pathname: ROUTES.AUTH.OTP,
-              params: { email }
-            }),
-          },
-        ]
-      );
+      if (response && response.auto_activated) {
+        Alert.alert(
+          "Registration Successful",
+          response.message || "Demo account auto-activated successfully.",
+          [
+            {
+              text: "Login Now",
+              onPress: () => router.replace(ROUTES.AUTH.LOGIN),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Registration Successful",
+          "An activation OTP has been sent to your email address.",
+          [
+            {
+              text: "Verify Account",
+              onPress: () => router.push({
+                pathname: ROUTES.AUTH.OTP,
+                params: { email }
+              }),
+            },
+          ]
+        );
+      }
     } catch (err: any) {
       Alert.alert("Registration Failed", err.message || "Please check registration fields.");
     } finally {
@@ -182,6 +203,7 @@ export const RegisterScreen: React.FC = () => {
               onChangeText={setFirstName}
               icon="user"
               className="flex-1 mr-2"
+              error={errors.firstName}
             />
             <CustomInput
               label="Last Name"
@@ -190,6 +212,7 @@ export const RegisterScreen: React.FC = () => {
               onChangeText={setLastName}
               icon="user"
               className="flex-1 ml-2"
+              error={errors.lastName}
             />
           </View>
 
@@ -222,12 +245,22 @@ export const RegisterScreen: React.FC = () => {
           />
 
           <CustomInput
-            label="Contact Number (Optional)"
-            placeholder="e.g. +91 9876543210"
+            label="Contact Number"
+            placeholder="e.g. 9876543210"
             value={contactNumber}
             onChangeText={setContactNumber}
             icon="phone"
             keyboardType="phone-pad"
+            error={errors.contactNumber}
+          />
+
+          <CustomInput
+            label="Date of Birth"
+            placeholder="YYYY-MM-DD (e.g. 2002-05-15)"
+            value={dateOfBirth}
+            onChangeText={setDateOfBirth}
+            icon="calendar"
+            error={errors.dateOfBirth}
           />
 
           <View className="flex-row w-full">

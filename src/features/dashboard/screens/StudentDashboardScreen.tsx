@@ -1,917 +1,350 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform, StatusBar } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Platform, StatusBar, Animated } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS } from "@/shared/theme/colors";
-import { Button } from "@/shared/ui/Button";
 import { useAuthStore } from "@store/authStore";
 import { ROUTES } from "@/constants/route";
-import { timetableApi } from "@/features/timetable/api/timetableApi";
-import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const StudentDashboardScreen: React.FC = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-
   const insets = useSafeAreaInsets();
-  const [todayClasses, setTodayClasses] = useState<any[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(false);
-  const [resetRequest, setResetRequest] = useState<{ status: string } | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
+
+  const slideAnim = useRef(new Animated.Value(-120)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: showStickyHeader ? 0 : -120,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: showStickyHeader ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showStickyHeader]);
 
   const handleScroll = (event: any) => {
     const y = event.nativeEvent.contentOffset.y;
-    if (y > 100) {
+    if (y > 60) {
       setShowStickyHeader(true);
     } else {
       setShowStickyHeader(false);
     }
   };
 
-  const parseDateSafe = (dateStr: string) => {
-    if (!dateStr) return new Date(NaN);
-    let normalized = dateStr;
-    if (dateStr.endsWith("+00:00")) {
-      normalized = dateStr.slice(0, -6) + "Z";
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return new Date(normalized);
+    return name.slice(0, 2).toUpperCase();
   };
 
-  const formatTimeStr = (timeStr: string) => {
-    if (!timeStr) return "";
-    if (timeStr.includes("T")) {
-      try {
-        const date = parseDateSafe(timeStr);
-        const hours = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? "PM" : "AM";
-        const displayHours = hours % 12 || 12;
-        return `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
-      } catch {
-        return timeStr;
-      }
-    }
-    try {
-      const parts = timeStr.split(":");
-      const hours = parseInt(parts[0], 10);
-      const minutes = parts[1];
-      const ampm = hours >= 12 ? "PM" : "AM";
-      const displayHours = hours % 12 || 12;
-      return `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
-    } catch {
-      return timeStr;
-    }
-  };
-
-  const getLectureStatus = (startTimeStr: string, endTimeStr: string) => {
-    const now = new Date();
-    const start = parseDateSafe(startTimeStr);
-    const end = parseDateSafe(endTimeStr);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return "completed";
-    }
-
-    if (now.getTime() < start.getTime()) {
-      return "upcoming";
-    } else if (now.getTime() > end.getTime()) {
-      return "completed";
-    } else {
-      return "live";
-    }
-  };
-
+  const userInitials = getInitials(user?.username || "Ananya Rao");
   const isFaceRegistered = user?.student_profile?.is_face_registered ?? false;
 
-  useEffect(() => {
-    const fetchTodayClasses = async () => {
-      setLoadingClasses(true);
-      try {
-        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const todayStr = days[new Date().getDay()];
-        const todayDate = new Date();
-
-        const [schedulesData, lecturesData] = await Promise.all([
-          timetableApi.getSchedules(),
-          attendanceApi.getLectures().catch(() => [])
-        ]);
-
-        const filteredSchedules = (schedulesData || [])
-          .filter((s: any) => s.day_of_week === todayStr)
-          .map((s: any) => ({
-            ...s,
-            type: "schedule",
-          }));
-
-        const rawLectures = Array.isArray(lecturesData) ? lecturesData : (lecturesData.results || []);
-        const filteredLectures = rawLectures
-          .filter((l: any) => {
-            if (!l.start_time) return false;
-            const start = parseDateSafe(l.start_time);
-            return (
-              start.getDate() === todayDate.getDate() &&
-              start.getMonth() === todayDate.getMonth() &&
-              start.getFullYear() === todayDate.getFullYear()
-            );
-          })
-          .map((l: any) => ({
-            id: `lecture_${l.id}`,
-            course_code: l.code || "LIVE",
-            course_name: l.name,
-            classroom_name: l.classroom_name,
-            start_time: l.start_time,
-            end_time: l.end_time,
-            type: "lecture",
-            code: l.code
-          }));
-
-        const getMinutes = (timeStr: string) => {
-          if (timeStr.includes("T")) {
-            const d = parseDateSafe(timeStr);
-            return d.getHours() * 60 + d.getMinutes();
-          }
-          const parts = timeStr.split(":");
-          return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-        };
-
-        const merged = [...filteredLectures, ...filteredSchedules];
-        merged.sort((a, b) => getMinutes(a.start_time) - getMinutes(b.start_time));
-
-        setTodayClasses(merged);
-      } catch (err) {
-        console.error("Failed to load today's classes", err);
-      } finally {
-        setLoadingClasses(false);
-      }
-    };
-    fetchTodayClasses();
-  }, []);
-
-  useEffect(() => {
-    const checkResetRequest = async () => {
-      if (isFaceRegistered) {
-        try {
-          const res = await attendanceApi.getResetRequestStatus();
-          if (res.has_request) {
-            setResetRequest({ status: res.status });
-          } else {
-            setResetRequest(null);
-          }
-        } catch (err) {
-          console.error("Failed to check reset request status:", err);
-        }
-      }
-    };
-    checkResetRequest();
-  }, [isFaceRegistered]);
-
-  const handleRequestBiometricReset = () => {
-    Alert.alert(
-      "Confirm Biometric Reset",
-      "Are you sure you want to request a biometric / device lock reset? This will notify your HOD or college Admin to review and unlock your account.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Request Reset",
-          onPress: async () => {
-            try {
-              await attendanceApi.requestBiometricReset();
-              setResetRequest({ status: "pending" });
-            } catch (err: any) {
-              console.error("Failed to submit biometric reset request:", err);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleLogout = async () => {
-    Alert.alert("Sign Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
-          router.replace(ROUTES.AUTH.LOGIN);
-        },
-      },
-    ]);
-  };
-
-  const userInitials = (user?.username || "S")[0].toUpperCase();
-
-  // Get nice dynamic date format for the header
-  const getHeaderDate = () => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const getFormattedDate = () => {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const now = new Date();
-    return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+    
+    const d = new Date();
+    const dayName = days[d.getDay()];
+    const dateNum = d.getDate();
+    const monthName = months[d.getMonth()];
+    return `${dayName} ${dateNum} ${monthName}`;
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return "Good morning";
+    } else if (hour < 17) {
+      return "Good afternoon";
+    } else {
+      return "Good evening";
+    }
   };
 
   return (
-    <View style={styles.rootContainer}>
+    <View className="flex-1 bg-[#F8FAFC]">
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       
-      {showStickyHeader && (
-        <View style={[styles.stickyHeader, { paddingTop: insets.top + 12 }]}>
-          <Text style={styles.stickyUserName} numberOfLines={1}>
-            {user?.username || "Student"}
-          </Text>
-          <View style={styles.stickyDateRow}>
-            <Feather name="calendar" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.stickyDateText}>{getHeaderDate()}</Text>
-          </View>
+      <Animated.View 
+        pointerEvents={showStickyHeader ? "auto" : "none"}
+        style={{ 
+          paddingTop: insets.top + 12,
+          transform: [{ translateY: slideAnim }],
+          opacity: opacityAnim
+        }}
+        className="absolute top-0 left-0 right-0 bg-white/95 border-b border-slate-100 flex-row justify-between items-center px-6 pb-3.5 z-50 shadow-sm"
+      >
+        <Text className="text-[16px] font-extrabold text-slate-800" numberOfLines={1}>
+          {user?.username || "Ananya"}
+        </Text>
+        <View className="flex-row items-center">
+          <Feather name="calendar" size={14} color="#5D1E62" className="mr-1.5" />
+          <Text className="text-xs font-bold text-[#5D1E62] uppercase tracking-wider">{getFormattedDate()}</Text>
         </View>
-      )}
+      </Animated.View>
 
       <ScrollView 
-        style={styles.container} 
-        contentContainerStyle={styles.content}
+        className="flex-1" 
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: Platform.OS === "ios" ? insets.top + 16 : insets.top + 20,
+          paddingBottom: 40
+        }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-      <View style={styles.header}>
-        <View style={styles.headerMain}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.userName} numberOfLines={1}>{user?.username || "Student"}</Text>
-          </View>
-          <TouchableOpacity style={styles.profileAvatarBtn} onPress={() => router.push(ROUTES.APP.PROFILE)}>
-            <Text style={styles.profileAvatarText}>{userInitials}</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.headerBottom}>
-          <Feather name="calendar" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={styles.dateText}>{getHeaderDate()}</Text>
-        </View>
-      </View>
-
-      {/* Biometrics Status Notification */}
-      {!isFaceRegistered ? (
-        <View style={styles.biometricWarningBanner}>
-          <View style={styles.bannerIconWrapper}>
-            <Feather name="shield" size={20} color="#EA580C" />
-          </View>
-          <View style={styles.bannerTextWrapper}>
-            <Text style={styles.bannerTitle}>Biometrics Required</Text>
-            <Text style={styles.bannerText}>
-              Register your face from 3 angles to enable mobile attendance.
+        {/* Header Section */}
+        <View className="flex-row justify-between items-center mb-6">
+          <View className="flex-1 mr-4">
+            <Text className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+              {getGreeting()}
+            </Text>
+            <Text className="text-[22px] font-black text-slate-800 mt-0.5" numberOfLines={1}>
+              {user?.username || "Ananya"}
+            </Text>
+            <Text className="text-[12px] font-semibold text-slate-400 mt-1">
+              {getFormattedDate()} · Semester 5
             </Text>
           </View>
-          <TouchableOpacity 
-            style={styles.bannerActionBtn} 
-            onPress={() => router.push(ROUTES.APP.REGISTER_FACE)}
-          >
-            <Text style={styles.bannerActionBtnText}>Register</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.biometricSuccessBanner}>
-          <View style={styles.compactRow}>
-            <View style={styles.statusBadgeGreen}>
-              <Text style={styles.statusBadgeTextGreen}>✓ Biometrics Active</Text>
-            </View>
+          <View className="flex-row items-center gap-3">
+            {/* Notification Bell Icon */}
+            <TouchableOpacity 
+              onPress={() => router.push(ROUTES.APP.ANNOUNCEMENTS)}
+              activeOpacity={0.7}
+              className="w-11 h-11 bg-white rounded-full justify-center items-center shadow-sm relative border border-slate-100"
+            >
+              <Feather name="bell" size={20} color="#1e293b" />
+              <View className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
+            </TouchableOpacity>
 
-            {resetRequest ? (
-              <View style={[
-                styles.requestBadge,
-                resetRequest.status === "pending" ? styles.requestStatus_pending
-                  : resetRequest.status === "approved" ? styles.requestStatus_approved
-                    : styles.requestStatus_rejected
-              ]}>
-                <Text style={[
-                  styles.requestBadgeText,
-                  {
-                    color: resetRequest.status === "pending" ? COLORS.warning
-                      : resetRequest.status === "approved" ? COLORS.success
-                        : COLORS.error
-                  }
-                ]}>
-                  Reset: {resetRequest.status.toUpperCase()}
-                </Text>
+            {/* Profile Avatar */}
+            <TouchableOpacity 
+              onPress={() => router.push(ROUTES.APP.PROFILE)}
+              activeOpacity={0.7}
+              className="w-11 h-11 bg-purple-100 rounded-full justify-center items-center shadow-sm border border-purple-200"
+            >
+              <Text className="text-purple-700 font-bold text-sm tracking-wide">
+                {userInitials}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Biometrics Warning Banner */}
+        {!isFaceRegistered && (
+          <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex-row items-center justify-between shadow-sm">
+            <View className="flex-1 mr-3 flex-row items-center gap-3">
+              <View className="w-10 h-10 bg-amber-100 rounded-xl justify-center items-center">
+                <Feather name="shield" size={18} color="#d97706" />
               </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.compactRequestBtn}
-                onPress={handleRequestBiometricReset}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.compactRequestBtnText}>Request Reset</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Portal Hub Quick Actions Grid */}
-      <View style={styles.actionSection}>
-        <Text style={styles.sectionTitle}>Portal Hub</Text>
-        <View style={styles.actionGrid}>
-          {/* Action 1: Mark Attendance */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            disabled={!isFaceRegistered}
-            onPress={() => router.push(ROUTES.APP.MARK_ATTENDANCE)}
-            style={[
-              styles.actionGridCard,
-              !isFaceRegistered && styles.disabledBtn,
-              { borderColor: "rgba(74, 21, 75, 0.2)" }
-            ]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(74, 21, 75, 0.08)" }]}>
-              <Feather name="camera" size={22} color={COLORS.primary} />
+              <View className="flex-1">
+                <Text className="text-amber-800 text-[13px] font-bold">Biometrics Required</Text>
+                <Text className="text-amber-600 text-[11px] font-semibold mt-0.5">Register face to enable mobile attendance.</Text>
+              </View>
             </View>
-            <Text style={styles.actionGridButtonText}>Mark Attendance</Text>
-          </TouchableOpacity>
-
-          {/* Action 2: Timetable */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.TIMETABLE)}
-            style={[styles.actionGridCard, { borderColor: "rgba(97, 31, 105, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(97, 31, 105, 0.08)" }]}>
-              <Feather name="calendar" size={22} color={COLORS.accent} />
-            </View>
-            <Text style={styles.actionGridButtonText}>Timetable</Text>
-          </TouchableOpacity>
-
-          {/* Action 3: Assignments */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.ASSIGNMENTS)}
-            style={[styles.actionGridCard, { borderColor: "rgba(124, 48, 133, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(124, 48, 133, 0.08)" }]}>
-              <Feather name="edit-3" size={22} color={COLORS.secondary} />
-            </View>
-            <Text style={styles.actionGridButtonText}>Assignments</Text>
-          </TouchableOpacity>
-
-          {/* Action 4: My Attendance */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.ATTENDANCE_HISTORY)}
-            style={[styles.actionGridCard, { borderColor: "rgba(124, 58, 237, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(124, 58, 237, 0.08)" }]}>
-              <Feather name="clipboard" size={22} color="#7C3AED" />
-            </View>
-            <Text style={styles.actionGridButtonText}>My Attendance</Text>
-          </TouchableOpacity>
-
-          {/* Action 5: Bus Tracking */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
-            style={[styles.actionGridCard, { borderColor: "rgba(234, 179, 8, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(234, 179, 8, 0.08)" }]}>
-              <Feather name="truck" size={22} color="#EA580C" />
-            </View>
-            <Text style={styles.actionGridButtonText}>Bus Tracking & QR</Text>
-          </TouchableOpacity>
-
-          {/* Action 6: My Fees */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.FEES)}
-            style={[styles.actionGridCard, { borderColor: "rgba(16, 185, 129, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
-              <Feather name="credit-card" size={22} color="#10B981" />
-            </View>
-            <Text style={styles.actionGridButtonText}>My Fees & Receipts</Text>
-          </TouchableOpacity>
-
-          {/* Action 7: Announcements */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.ANNOUNCEMENTS)}
-            style={[styles.actionGridCard, { borderColor: "rgba(59, 130, 246, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(59, 130, 246, 0.08)" }]}>
-              <Feather name="bell" size={22} color="#3B82F6" />
-            </View>
-            <Text style={styles.actionGridButtonText}>Announcements</Text>
-          </TouchableOpacity>
-
-          {/* Action 8: Library */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.APP.LIBRARY)}
-            style={[styles.actionGridCard, { borderColor: "rgba(217, 119, 6, 0.2)" }]}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: "rgba(217, 119, 6, 0.08)" }]}>
-              <Feather name="book-open" size={22} color="#D97706" />
-            </View>
-            <Text style={styles.actionGridButtonText}>Library</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Today's Schedule Timeline Section */}
-      <View style={styles.scheduleSection}>
-        <Text style={styles.sectionTitle}>Today's Schedule</Text>
-        {loadingClasses ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 24 }} />
-        ) : todayClasses.length === 0 ? (
-          <View style={styles.noClassCard}>
-            <Feather name="calendar" size={32} color={COLORS.textMuted} style={{ marginBottom: 8 }} />
-            <Text style={styles.noClassText}>No lectures scheduled for today.</Text>
-          </View>
-        ) : (
-          <View style={styles.timelineContainer}>
-            {todayClasses.map((c: any, index: number) => {
-              const status = c.type === "lecture" ? getLectureStatus(c.start_time, c.end_time) : null;
-              const isLive = status === "live";
-              const isCompleted = status === "completed";
-
-              let badgeText = c.course_code;
-              let stripeStyle: any = styles.stripeUpcoming;
-              let badgeColor: string = COLORS.info;
-
-              if (c.type === "lecture") {
-                if (isLive) {
-                  badgeText = "🔴 LIVE SESSION";
-                  stripeStyle = styles.stripeLive;
-                  badgeColor = COLORS.error;
-                } else if (isCompleted) {
-                  badgeText = "⌛ COMPLETED";
-                  stripeStyle = styles.stripeCompleted;
-                  badgeColor = COLORS.textSecondary;
-                } else {
-                  badgeText = "⏰ UPCOMING";
-                  stripeStyle = styles.stripeUpcoming;
-                  badgeColor = COLORS.info;
-                }
-              } else {
-                stripeStyle = styles.stripeUpcoming;
-                badgeText = "📅 SCHEDULED";
-                badgeColor = COLORS.accent;
-              }
-
-              return (
-                <View key={c.id} style={styles.timelineItem}>
-                  {/* Vertical line indicator connector */}
-                  {index < todayClasses.length - 1 && <View style={styles.timelineConnector} />}
-
-                  <View style={[styles.timelineStripe, stripeStyle]} />
-                  <View style={styles.timelineDetailsCard}>
-                    <View style={styles.timelineCardHeader}>
-                      <Text style={[styles.timelineBadge, { color: badgeColor, borderColor: badgeColor }]}>
-                        {badgeText}
-                      </Text>
-                      {c.type === "lecture" && isLive && (
-                        <View style={styles.attendanceCodeWrapper}>
-                          <Text style={styles.attendanceCodeText}>Code: {c.code}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.timelineClassName, isCompleted && styles.mutedText]} numberOfLines={1}>
-                      {c.course_name}
-                    </Text>
-                    <View style={styles.timelineCardFooter}>
-                      <View style={styles.footerInfoItem}>
-                        <Feather name="clock" size={12} color={COLORS.textSecondary} />
-                        <Text style={[styles.footerInfoText, isCompleted && styles.mutedText]}>
-                          {formatTimeStr(c.start_time)} - {formatTimeStr(c.end_time)}
-                        </Text>
-                      </View>
-                      <View style={styles.footerInfoItem}>
-                        <Feather name="map-pin" size={12} color={COLORS.textSecondary} />
-                        <Text style={[styles.footerInfoText, isCompleted && styles.mutedText]}>
-                          Room: {c.classroom_name || "TBD"}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
+            <TouchableOpacity 
+              onPress={() => router.push(ROUTES.APP.REGISTER_FACE)}
+              className="bg-amber-600 px-3.5 py-2 rounded-xl"
+            >
+              <Text className="text-white text-xs font-bold">Register</Text>
+            </TouchableOpacity>
           </View>
         )}
-      </View>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
-  </View>
+        {/* Live Bus Tracking Card */}
+        <View className="relative overflow-hidden bg-[#5D1E62] rounded-3xl p-6 mb-6 shadow-md">
+          {/* Radial concentric circle pattern overlays */}
+          <View className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/[0.04] border border-white/[0.04]" />
+          <View className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/[0.04] border border-white/[0.06]" />
+          <View className="absolute -right-0 -top-0 w-24 h-24 rounded-full bg-white/[0.05] border border-white/[0.08]" />
+
+          <View className="flex-row items-center">
+            <View className="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-2" />
+            <Text className="text-white/80 text-[11px] font-black tracking-widest uppercase">ROUTE 12 · CAMPUS LOOP</Text>
+          </View>
+
+          <Text className="text-white text-[24px] font-black mt-2.5 tracking-tight leading-snug">Bus arriving in 8 min</Text>
+          <Text className="text-white/60 text-[12px] font-bold mt-1">Main Gate stop · updated 4s ago</Text>
+
+          <View className="flex-row mt-6 gap-3">
+            <TouchableOpacity 
+              onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
+              activeOpacity={0.9}
+              className="bg-white px-6 py-3 rounded-full shadow-sm"
+            >
+              <Text className="text-[#5D1E62] font-black text-[13px]">Track live</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
+              activeOpacity={0.8}
+              className="px-4 py-3 justify-center"
+            >
+              <Text className="text-white/95 font-black text-[13px]">View stops</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Attendance & Fees due Cards */}
+        <View className="flex-row gap-4 mb-6">
+          {/* Attendance Card */}
+          <TouchableOpacity 
+            onPress={() => router.push(ROUTES.APP.ATTENDANCE_HISTORY)}
+            activeOpacity={0.9}
+            className="flex-1 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm justify-between"
+          >
+            <View>
+              <Text className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Attendance</Text>
+              <Text className="text-[28px] font-black text-slate-800 mt-2">92%</Text>
+            </View>
+            <View className="w-full h-1.5 bg-slate-100 rounded-full mt-4 overflow-hidden">
+              <View className="h-full bg-emerald-500 rounded-full w-[92%]" />
+            </View>
+          </TouchableOpacity>
+
+          {/* Fees due Card */}
+          <TouchableOpacity 
+            onPress={() => router.push(ROUTES.APP.FEES)}
+            activeOpacity={0.9}
+            className="flex-1 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm justify-between"
+          >
+            <View>
+              <Text className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Fees due</Text>
+              <Text className="text-[28px] font-black text-slate-800 mt-2">₹24,500</Text>
+            </View>
+            <View className="self-start bg-orange-50 border border-orange-100 rounded-lg px-2.5 py-1 mt-3">
+              <Text className="text-[11px] font-bold text-orange-600">Due 20 Jul</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Dummy Attendance Button */}
+        <TouchableOpacity
+          onPress={() => router.push(ROUTES.APP.MARK_ATTENDANCE)}
+          activeOpacity={0.9}
+          className="bg-white border border-slate-100 rounded-3xl p-4 mb-6 shadow-sm flex-row items-center justify-between"
+        >
+          <View className="flex-row items-center gap-3">
+            <View className="w-10 h-10 bg-purple-50 rounded-xl justify-center items-center">
+              <Feather name="camera" size={18} color="#5D1E62" />
+            </View>
+            <Text className="text-slate-800 font-extrabold text-[14px]">Dummy attendance</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#94a3b8" />
+        </TouchableOpacity>
+
+        {/* Up next Section */}
+        <View className="mb-6">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[18px] font-black text-slate-800 tracking-tight">Up next</Text>
+            <TouchableOpacity onPress={() => router.push(ROUTES.APP.TIMETABLE)}>
+              <Text className="text-[13px] font-bold text-[#5D1E62]">Timetable</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            onPress={() => router.push(ROUTES.APP.TIMETABLE)}
+            activeOpacity={0.9}
+            className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center flex-1">
+              <View className="items-center min-w-[50px]">
+                <Text className="text-[18px] font-black text-purple-950">9:00</Text>
+                <Text className="text-[11px] font-bold text-slate-400 mt-0.5">50 min</Text>
+              </View>
+              <View className="w-[1px] h-8 bg-slate-200 mx-4" />
+              <View className="flex-1">
+                <Text className="text-[15px] font-bold text-slate-800" numberOfLines={1}>CS-301 · Operating Systems</Text>
+                <Text className="text-[12px] font-semibold text-slate-400 mt-0.5" numberOfLines={1}>Room B-204 · Dr. Menon</Text>
+              </View>
+            </View>
+            <View className="bg-purple-50 rounded-full px-3 py-1.5 ml-2 border border-purple-100">
+              <Text className="text-[11px] font-bold text-purple-700">in 25 min</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick actions 2x2 Grid */}
+        <View className="gap-3">
+          {/* First Row */}
+          <View className="flex-row gap-3">
+            {/* Assignments */}
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.APP.ASSIGNMENTS)}
+              activeOpacity={0.9}
+              className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
+            >
+              <View className="w-11 h-11 bg-pink-50 border border-pink-100 rounded-2xl justify-center items-center">
+                <Feather name="file-text" size={18} color="#db2777" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Assignments</Text>
+                <Text className="text-[#EA580C] text-[11px] font-bold mt-0.5" numberOfLines={1}>2 due this week</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Library */}
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.APP.LIBRARY)}
+              activeOpacity={0.9}
+              className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
+            >
+              <View className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-2xl justify-center items-center">
+                <Feather name="book-open" size={18} color="#4f46e5" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Library</Text>
+                <Text className="text-slate-400 text-[11px] font-bold mt-0.5" numberOfLines={1}>1 book due back</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Second Row */}
+          <View className="flex-row gap-3">
+            {/* Leave */}
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.APP.LEAVE)}
+              activeOpacity={0.9}
+              className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
+            >
+              <View className="w-11 h-11 bg-purple-50 border border-purple-100 rounded-2xl justify-center items-center">
+                <Feather name="calendar" size={18} color="#9333ea" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Leave</Text>
+                <Text className="text-emerald-600 text-[11px] font-bold mt-0.5" numberOfLines={1}>1 approved</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Announcements */}
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.APP.ANNOUNCEMENTS)}
+              activeOpacity={0.9}
+              className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
+            >
+              <View className="w-11 h-11 bg-violet-50 border border-violet-100 rounded-2xl justify-center items-center">
+                <Feather name="volume-2" size={18} color="#7c3aed" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Announcements</Text>
+                <Text className="text-[#a855f7] text-[11px] font-bold mt-0.5" numberOfLines={1}>3 new</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  rootContainer: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC", // Clean light grey slate background
-    position: "relative",
-  },
-  stickyHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 14,
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  stickyUserName: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  stickyDateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  stickyDateText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  content: {
-    padding: 24,
-    paddingTop: Platform.OS === "ios" ? 64 : 52,
-  },
-  header: {
-    marginBottom: 24,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-  },
-  headerMain: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  welcomeText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: COLORS.text,
-    letterSpacing: 0.3,
-  },
-  profileAvatarBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.8)",
-  },
-  profileAvatarText: {
-    color: COLORS.white,
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  headerBottom: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
-  },
-  dateText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  biometricWarningBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(234, 88, 12, 0.07)",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(234, 88, 12, 0.2)",
-    marginBottom: 24,
-  },
-  bannerIconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(234, 88, 12, 0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  bannerTextWrapper: {
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#C2410C",
-    marginBottom: 2,
-  },
-  bannerText: {
-    fontSize: 12,
-    color: "#9A3412",
-    lineHeight: 16,
-  },
-  bannerActionBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "#EA580C",
-    borderRadius: 10,
-    marginLeft: 10,
-  },
-  bannerActionBtnText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  biometricSuccessBanner: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  compactRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  statusBadgeGreen: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
-  },
-  statusBadgeTextGreen: {
-    color: COLORS.success,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  compactRequestBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "rgba(74, 21, 75, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(74, 21, 75, 0.2)",
-  },
-  compactRequestBtnText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  requestBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  requestBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  requestStatus_pending: {
-    backgroundColor: "rgba(245, 158, 11, 0.05)",
-    borderColor: "rgba(245, 158, 11, 0.2)",
-  },
-  requestStatus_approved: {
-    backgroundColor: "rgba(16, 185, 129, 0.05)",
-    borderColor: "rgba(16, 185, 129, 0.2)",
-  },
-  requestStatus_rejected: {
-    backgroundColor: "rgba(220, 38, 38, 0.05)",
-    borderColor: "rgba(220, 38, 38, 0.2)",
-  },
-  actionSection: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 16,
-    letterSpacing: 0.3,
-  },
-  actionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  actionGridCard: {
-    width: "48%",
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-  },
-  actionIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  actionGridButtonText: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  disabledBtn: {
-    opacity: 0.5,
-  },
-  scheduleSection: {
-    marginBottom: 28,
-  },
-  noClassCard: {
-    backgroundColor: COLORS.white,
-    padding: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-  },
-  noClassText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  timelineContainer: {
-    position: "relative",
-  },
-  timelineItem: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    marginBottom: 16,
-    position: "relative",
-  },
-  timelineConnector: {
-    position: "absolute",
-    left: 2,
-    top: 36,
-    bottom: -24,
-    width: 2,
-    backgroundColor: "#E2E8F0",
-    zIndex: 1,
-  },
-  timelineStripe: {
-    width: 6,
-    borderRadius: 3,
-    marginRight: 12,
-    zIndex: 2,
-  },
-  stripeLive: {
-    backgroundColor: COLORS.error,
-  },
-  stripeUpcoming: {
-    backgroundColor: COLORS.info,
-  },
-  stripeCompleted: {
-    backgroundColor: COLORS.textMuted,
-  },
-  timelineDetailsCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-  },
-  timelineCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  timelineBadge: {
-    fontSize: 10,
-    fontWeight: "800",
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  attendanceCodeWrapper: {
-    backgroundColor: COLORS.error,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  attendanceCodeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: COLORS.white,
-  },
-  timelineClassName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 10,
-  },
-  timelineCardFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    gap: 16,
-  },
-  footerInfoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  footerInfoText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-  },
-  mutedText: {
-    color: COLORS.textMuted,
-  },
-  signOutBtn: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(220, 38, 38, 0.05)",
-    borderRadius: 14,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "rgba(220, 38, 38, 0.15)",
-    marginTop: 12,
-  },
-  signOutText: {
-    color: COLORS.error,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});
 
 export default StudentDashboardScreen;

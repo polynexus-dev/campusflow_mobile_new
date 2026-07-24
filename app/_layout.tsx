@@ -3,10 +3,13 @@ import React, { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@store/authStore";
-import { ActivityIndicator, View, StyleSheet } from "react-native";
+import { ActivityIndicator, View, StyleSheet, LogBox } from "react-native";
 import { COLORS } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
 import { hasBusConductorAccess } from "@/utils/busAccess";
+
+// Suppress third-party SafeAreaView deprecation warnings
+LogBox.ignoreLogs(["SafeAreaView has been deprecated"]);
 
 const queryClient = new QueryClient();
 

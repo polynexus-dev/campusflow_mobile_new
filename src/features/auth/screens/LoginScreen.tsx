@@ -11,11 +11,12 @@ import { Feather } from "@expo/vector-icons";
 import { hasBusConductorAccess } from "@/utils/busAccess";
 
 interface CustomInputProps {
-  label: string;
+  label?: string;
+  rightLabel?: React.ReactNode;
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
-  icon: keyof typeof Feather.glyphMap;
+  icon?: keyof typeof Feather.glyphMap;
   secureTextEntry?: boolean;
   error?: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
@@ -23,6 +24,7 @@ interface CustomInputProps {
 
 const CustomInput: React.FC<CustomInputProps> = ({
   label,
+  rightLabel,
   placeholder,
   value,
   onChangeText,
@@ -35,19 +37,26 @@ const CustomInput: React.FC<CustomInputProps> = ({
 
   return (
     <View style={styles.inputWrapper}>
-      <Text style={styles.inputLabel}>{label}</Text>
+      {(label || rightLabel) && (
+        <View style={styles.labelRow}>
+          {label ? <Text style={styles.inputLabel}>{label}</Text> : <View />}
+          {rightLabel}
+        </View>
+      )}
       <View
         style={[
           styles.inputContainer,
           error ? styles.inputContainerError : null,
         ]}
       >
-        <Feather
-          name={icon}
-          size={18}
-          color={COLORS.primary}
-          style={styles.inputLeftIcon}
-        />
+        {icon && (
+          <Feather
+            name={icon}
+            size={18}
+            color={COLORS.primary}
+            style={styles.inputLeftIcon}
+          />
+        )}
         <TextInput
           placeholder={placeholder}
           placeholderTextColor={COLORS.textMuted}
@@ -64,7 +73,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
             style={styles.inputRightIcon}
           >
             <Feather
-              name={isSecure ? "eye-off" : "eye"}
+              name={isSecure ? "eye" : "eye-off"}
               size={18}
               color={COLORS.textSecondary}
             />
@@ -171,94 +180,93 @@ export const LoginScreen: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       
-      {/* Ambient background glow elements for a premium layout feel */}
-      <View style={styles.glowTopRight} />
-      <View style={styles.glowBottomLeft} />
-
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
+        <View style={styles.logoWrapper}>
           <View style={styles.logoContainer}>
             <Image
               source={require("../../../../assets/campus_nexus_icon.png")}
               style={styles.logoImage}
             />
           </View>
-          <Text style={styles.title}>
-            Campus<Text style={styles.titleHighlight}>Nexus</Text>
-          </Text>
-          <Text style={styles.subtitle}>Your Entire Campus, One Smart Ecosystem</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardGreeting}>Welcome Back</Text>
-          <Text style={styles.cardSubtitle}>Sign in to access your dashboard</Text>
+        <Text style={styles.title}>Welcome back</Text>
+        <Text style={styles.subtitle}>Sign in to CampusFlow with your college account.</Text>
 
+        <View style={styles.formContainer}>
           <CustomInput
-            label="Username / Email"
-            placeholder="Enter your username or email"
+            key="login-username"
+            label="College email"
+            placeholder="ananya.rao@nexuscollege.edu"
             value={username}
             onChangeText={setUsername}
-            icon="user"
             error={errors.username}
+            autoCapitalize="none"
           />
 
           <CustomInput
+            key="login-password"
             label="Password"
+            rightLabel={
+              <TouchableOpacity
+                onPress={() => {
+                  setShowForgot(true);
+                  setForgotStep(1);
+                  setForgotEmail("");
+                  setForgotOtp("");
+                  setForgotToken("");
+                  setForgotPassword("");
+                  setForgotConfirm("");
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot?</Text>
+              </TouchableOpacity>
+            }
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
-            icon="lock"
             secureTextEntry
             error={errors.password}
           />
 
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={styles.rememberMeContainer}
-              onPress={() => setRememberMe(!rememberMe)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Feather name="check" size={10} color={COLORS.white} />}
-              </View>
-              <Text style={styles.rememberMeText}>Remember Me</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => {
-                setShowForgot(true);
-                setForgotStep(1);
-                setForgotEmail("");
-                setForgotOtp("");
-                setForgotToken("");
-                setForgotPassword("");
-                setForgotConfirm("");
-              }} 
-              activeOpacity={0.7}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-
           <Button
-            title="Authenticate"
+            title="Sign in"
             onPress={handleLogin}
             loading={loading}
             style={styles.button}
           />
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>New Student? </Text>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Button
+            title="Sign in with OTP instead"
+            variant="outline"
+            onPress={() => router.push(ROUTES.AUTH.OTP)}
+            style={styles.otpButton}
+            textStyle={styles.otpButtonText}
+          />
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            New to CampusFlow?{" "}
             <Text
               style={styles.footerLink}
               onPress={() => router.push(ROUTES.AUTH.REGISTER)}
             >
-              Create Account
+              Register
             </Text>
-          </View>
+          </Text>
         </View>
+      </ScrollView>
+
       {/* Forgot Password Modal (DPDP Compliance & Recovery) */}
       <Modal
         visible={showForgot}
@@ -288,6 +296,7 @@ export const LoginScreen: React.FC = () => {
                     Enter your registered college email. We will send you a 6-digit verification code.
                   </Text>
                   <CustomInput
+                    key="forgot-email"
                     label="College Email Address"
                     placeholder="student@college.edu"
                     value={forgotEmail}
@@ -324,6 +333,7 @@ export const LoginScreen: React.FC = () => {
                     Enter the 6-digit OTP code sent to your email to verify your identity:
                   </Text>
                   <CustomInput
+                    key="forgot-otp"
                     label="6-Digit Code"
                     placeholder="123456"
                     value={forgotOtp}
@@ -361,6 +371,7 @@ export const LoginScreen: React.FC = () => {
                     Enter your new secure password:
                   </Text>
                   <CustomInput
+                    key="forgot-new-password"
                     label="New Password"
                     placeholder="••••••••"
                     value={forgotPassword}
@@ -369,6 +380,7 @@ export const LoginScreen: React.FC = () => {
                     secureTextEntry
                   />
                   <CustomInput
+                    key="forgot-confirm-password"
                     label="Confirm New Password"
                     placeholder="••••••••"
                     value={forgotConfirm}
@@ -418,7 +430,6 @@ export const LoginScreen: React.FC = () => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -426,41 +437,18 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary, // Aubergine brand background
-    position: "relative",
-  },
-  glowTopRight: {
-    position: "absolute",
-    top: -100,
-    right: -100,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: COLORS.secondary,
-    opacity: 0.15,
-    zIndex: -1,
-  },
-  glowBottomLeft: {
-    position: "absolute",
-    bottom: -120,
-    left: -120,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: COLORS.accent,
-    opacity: 0.18,
-    zIndex: -1,
+    backgroundColor: "#F9F9FB",
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
     padding: 24,
-    paddingTop: Platform.OS === "ios" ? 64 : 48,
+    paddingTop: Platform.OS === "ios" ? 72 : 54,
     paddingBottom: 32,
   },
-  header: {
+  logoWrapper: {
     alignItems: "center",
     marginBottom: 32,
+    marginTop: 16,
   },
   logoContainer: {
     width: 96,
@@ -469,13 +457,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
+    elevation: 2,
   },
   logoImage: {
     width: 60,
@@ -483,72 +471,54 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   title: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: COLORS.white,
-    letterSpacing: 1.2,
-  },
-  titleHighlight: {
-    color: "#E8C8FF", // Bright lilac shade for dynamic accent
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#1f2937",
+    letterSpacing: -0.5,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginTop: 6,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 28,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-  },
-  cardGreeting: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
-    marginBottom: 24,
+    fontWeight: "400",
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  formContainer: {
+    width: "100%",
+  },
+  labelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    width: "100%",
   },
   inputWrapper: {
-    marginBottom: 18,
+    marginBottom: 20,
     width: "100%",
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.2,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
   },
   inputContainer: {
     height: 54,
-    borderRadius: 14,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
     borderColor: "#E2E8F0",
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
   },
   inputContainerFocused: {
-    borderColor: COLORS.secondary,
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.secondary,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   inputContainerError: {
     borderColor: COLORS.error,
@@ -560,8 +530,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     color: COLORS.text,
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
     padding: 0,
   },
   inputRightIcon: {
@@ -575,56 +545,49 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginLeft: 4,
   },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-    marginTop: 4,
-  },
-  rememberMeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    backgroundColor: COLORS.white,
-  },
-  checkboxChecked: {
-    backgroundColor: COLORS.secondary,
-    borderColor: COLORS.secondary,
-  },
-  rememberMeText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+  forgotPasswordText: {
+    fontSize: 14,
+    color: COLORS.primary,
     fontWeight: "600",
   },
-  forgotPasswordText: {
-    fontSize: 13,
-    color: COLORS.secondary,
+  button: {
+    marginTop: 12,
+    borderRadius: 12,
+    height: 54,
+    backgroundColor: COLORS.primary,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 24,
+    width: "100%",
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E2E8F0",
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  otpButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "rgba(74, 21, 75, 0.15)",
+    borderRadius: 12,
+    height: 54,
+  },
+  otpButtonText: {
+    color: COLORS.primary,
     fontWeight: "700",
   },
-  button: {
-    marginTop: 8,
-    borderRadius: 14,
-    height: 54,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
   footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
+    alignItems: "center",
+    marginTop: "auto",
+    paddingVertical: 24,
   },
   footerText: {
     color: COLORS.textSecondary,
@@ -633,7 +596,6 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     color: COLORS.primary,
-    fontSize: 14,
     fontWeight: "700",
   },
 
