@@ -3,7 +3,10 @@ import httpClient from "@services/api/httpClient";
 export const attendanceApi = {
   registerFace: async (formData: FormData) => {
     // Multipart upload containing front, left, right image files
-    const response = await httpClient.post("/register-face/", formData);
+    // Extended timeout (60s) for server-side InsightFace ONNX AI processing across 3 angles
+    const response = await httpClient.post("/register-face/", formData, {
+      timeout: 60000,
+    });
     return response.data;
   },
 
@@ -15,7 +18,10 @@ export const attendanceApi = {
 
   markAttendance: async (formData: FormData) => {
     // Submit live photo, baseline photo (photo_prev), challenge_id, lecture_id
-    const response = await httpClient.post("/mark-attendance/", formData);
+    // Extended timeout (45s) for liveness & embedding verification
+    const response = await httpClient.post("/mark-attendance/", formData, {
+      timeout: 45000,
+    });
     return response.data;
   },
 
