@@ -32,6 +32,7 @@ type Props = {
     contentContainerStyle?: StyleProp<ViewStyle>;
     style?: StyleProp<ViewStyle>;
     disablePadding?: boolean;
+    disableBottomPadding?: boolean;
 };
 
 export function ScreenWrapper({
@@ -50,6 +51,7 @@ export function ScreenWrapper({
     contentContainerStyle,
     style,
     disablePadding = false,
+    disableBottomPadding = false,
 }: Props) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -121,7 +123,7 @@ export function ScreenWrapper({
                     contentContainerStyle={[
                         contentContainerStyle, 
                         !disablePadding && { 
-                            paddingBottom: bottomPadding,
+                            paddingBottom: disableBottomPadding ? 0 : bottomPadding,
                             paddingTop: showHeader ? headerHeight : insets.top + 16,
                         }
                     ]}
@@ -135,7 +137,7 @@ export function ScreenWrapper({
                         { flex: 1 },
                         !disablePadding && { 
                             paddingTop: showHeader ? headerHeight : insets.top + 16,
-                            paddingBottom: bottomPadding,
+                            paddingBottom: disableBottomPadding ? 0 : bottomPadding,
                         }
                     ]}
                 >

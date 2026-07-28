@@ -55,6 +55,7 @@ export const AssignmentsListScreen: React.FC = () => {
       showBack={true}
       onBack={() => router.replace(ROUTES.APP.DASHBOARD)}
       style={styles.container}
+      disableBottomPadding={true}
     >
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <Text style={styles.subtitle}>Track and submit your coursework tasks</Text>

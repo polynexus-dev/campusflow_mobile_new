@@ -2,105 +2,76 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/shared/theme/colors";
-import { timetableApi } from "../api/timetableApi";
+import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 import { ROUTES } from "@/constants/route";
 
-const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
 export const TimetableScreen: React.FC = () => {
   const router = useRouter();
-  const [selectedDay, setSelectedDay] = useState<string>("Monday");
-  const [schedules, setSchedules] = useState<any[]>([]);
+  const [lectures, setLectures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Set today's day as default if possible
   useEffect(() => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const today = days[new Date().getDay()];
-    if (DAYS_OF_WEEK.includes(today)) {
-      setSelectedDay(today);
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchSchedules = async () => {
+    const fetchLectures = async () => {
       setLoading(true);
       try {
-        const data = await timetableApi.getSchedules();
-        setSchedules(data);
+        const res = await attendanceApi.getLectures();
+        const data = res.results || res;
+        setLectures(Array.isArray(data) ? data : []);
       } catch (err: any) {
-        console.error("Error Loading Timetable:", err);
+        console.error("Error Loading Timetable Lectures:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchSchedules();
+    fetchLectures();
   }, []);
 
-  const filteredSchedules = schedules.filter(s => s.day_of_week === selectedDay);
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+    } catch {
+      return "";
+    }
+  };
 
   const formatTime = (timeStr: string) => {
-    if (!timeStr) return "";
-    // e.g. "09:00:00" -> "09:00 AM"
     try {
-      const parts = timeStr.split(":");
-      const hours = parseInt(parts[0], 10);
-      const minutes = parts[1];
-      const ampm = hours >= 12 ? "PM" : "AM";
-      const displayHours = hours % 12 || 12;
-      return `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+      return new Date(timeStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } catch {
       return timeStr;
     }
   };
 
+
   return (
     <ScreenWrapper
-      title="Weekly Timetable"
+      title="All Lectures"
       showHeader={true}
       showBack={true}
       style={styles.container}
+      disableBottomPadding={true}
     >
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      <Text style={styles.subtitle}>Your scheduled lectures and classrooms</Text>
-
-      {/* Day Selector Tabs */}
-      <View style={styles.tabsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScrollContent}>
-          {DAYS_OF_WEEK.map((day) => {
-            const isSelected = selectedDay === day;
-            return (
-              <TouchableOpacity
-                key={day}
-                activeOpacity={0.8}
-                onPress={() => setSelectedDay(day)}
-                style={[styles.tab, isSelected && styles.activeTab]}
-              >
-                <Text style={[styles.tabText, isSelected && styles.activeTabText]}>{day.substring(0, 3)}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <Text style={styles.subtitle}>List of all scheduled lectures and classrooms</Text>
 
       {/* Timetable List */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Fetching timetable...</Text>
+          <Text style={styles.loadingText}>Fetching lectures...</Text>
         </View>
       ) : (
         <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
-          <Text style={styles.dayHeader}>{selectedDay}'s Classes</Text>
+          <Text style={styles.dayHeader}>Lectures</Text>
           
-          {filteredSchedules.length === 0 ? (
+          {lectures.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No classes scheduled for {selectedDay}.</Text>
-              <Text style={styles.emptySubText}>Use this day to catch up on assignments!</Text>
+              <Text style={styles.emptyText}>No lectures scheduled.</Text>
             </View>
           ) : (
-            filteredSchedules.map((item) => (
+            lectures.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.scheduleCard}
@@ -108,20 +79,20 @@ export const TimetableScreen: React.FC = () => {
                 onPress={() => {
                   router.push({
                     pathname: ROUTES.APP.MARK_ATTENDANCE,
-                    params: { lectureId: item.session_id || item.lecture_id || item.lecture || item.id }
+                    params: { lectureId: item.id.toString() }
                   });
                 }}
               >
                 <View style={styles.cardHeader}>
-                  <Text style={styles.courseCode}>{item.course_code}</Text>
+                  <Text style={styles.courseCode}>{item.code || item.subject || "CLASS"}</Text>
                   <View style={styles.timeTag}>
                     <Text style={styles.timeTagText}>
-                      {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                      {formatDate(item.start_time)}, {formatTime(item.start_time)} - {formatTime(item.end_time)}
                     </Text>
                   </View>
                 </View>
                 
-                <Text style={styles.courseName}>{item.course_name}</Text>
+                <Text style={styles.courseName}>{item.name}</Text>
                 
                 <View style={styles.divider} />
                 
@@ -129,12 +100,12 @@ export const TimetableScreen: React.FC = () => {
                   <View style={styles.infoCol}>
                     <Text style={styles.infoLabel}>CLASSROOM</Text>
                     <Text style={styles.infoVal}>
-                      {item.classroom_name ? `${item.classroom_name} (${item.classroom_code || "N/A"})` : "TBD"}
+                      {item.classroom_name || "TBD"}
                     </Text>
                   </View>
                   <View style={styles.infoCol}>
                     <Text style={styles.infoLabel}>INSTRUCTOR</Text>
-                    <Text style={styles.infoVal}>{item.faculty_name || "Staff"}</Text>
+                    <Text style={styles.infoVal}>{item.teacher_name || "Staff"}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -156,38 +127,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginHorizontal: 24,
     marginVertical: 12,
-  },
-  tabsContainer: {
-    height: 60,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-    justifyContent: "center",
-  },
-  tabsScrollContent: {
-    paddingHorizontal: 16,
-    alignItems: "center",
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  activeTab: {
-    backgroundColor: "rgba(74, 21, 75, 0.15)",
-    borderColor: COLORS.primary,
-  },
-  tabText: {
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  activeTabText: {
-    color: COLORS.primary,
   },
   loadingContainer: {
     flex: 1,
@@ -223,12 +162,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 15,
     fontWeight: "600",
-    textAlign: "center",
-  },
-  emptySubText: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    marginTop: 6,
     textAlign: "center",
   },
   scheduleCard: {

@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
 import FaceMeshOverlay from "./FaceMeshOverlay";
 
 const { width: SW } = Dimensions.get("window");
@@ -317,16 +319,24 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="front" />
 
       {/* ── Top banner ──────────────────────────────────────────────── */}
-      <View style={s.banner}>
-        <Text style={s.bannerTitle}>{cfg.icon}  {cfg.label}</Text>
-        <Text style={s.bannerSub}>{guideText || cfg.sub}</Text>
-      </View>
+      <BlurView tint="dark" intensity={80} style={s.banner}>
+        <View style={s.headerRow}>
+          {onCancel ? (
+            <TouchableOpacity style={s.circleCloseBtn} onPress={onCancel} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFF" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 38 }} />
+          )}
 
-      {onCancel && (
-        <TouchableOpacity style={s.cancelBtn} onPress={onCancel} activeOpacity={0.7}>
-          <Text style={s.cancelBtnText}>✕ Close</Text>
-        </TouchableOpacity>
-      )}
+          <View style={s.headerTextContainer}>
+            <Text style={s.bannerTitle}>{cfg.icon}  {cfg.label}</Text>
+            <Text style={s.bannerSub}>{guideText || cfg.sub}</Text>
+          </View>
+
+          <View style={{ width: 38 }} />
+        </View>
+      </BlurView>
 
       {/* ── Oval + arrow + countdown ─────────────────────────────────── */}
       <View style={s.ovalArea}>
@@ -394,32 +404,34 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       </View>
 
       {/* ── Bottom status ────────────────────────────────────────────── */}
-      <View style={s.footer}>
+      <BlurView tint="dark" intensity={80} style={s.footer}>
         <View style={[
           s.statusPill,
-          isCountdown ? { borderColor: color, backgroundColor: `${color}22` }
-            : isCaptured ? { borderColor: "#22C55E", backgroundColor: "#14532D88" }
+          isCountdown ? { borderColor: color, backgroundColor: `${color}15` }
+            : isCaptured ? { borderColor: "#22C55E", backgroundColor: "rgba(34, 197, 94, 0.1)" }
               : s.statusDefault,
         ]}>
-          {isCaptured ? (
+          <View style={s.statusPillContent}>
+            <View style={[
+              s.indicatorDot,
+              isCountdown ? { backgroundColor: color }
+                : isCaptured ? { backgroundColor: "#22C55E" }
+                  : { backgroundColor: "#6366F1" }
+            ]} />
             <Text style={s.statusTxt}>
-              {challengeType !== "blink"
-                ? `${challengeConfig?.icon ?? "🎯"} ${challengeConfig?.sub ?? "Perform the challenge now!"}`
-                : <>👁 Checking liveness — <Text style={{ color: "#22C55E", fontWeight: "900" }}>blink once!</Text></>
-              }
+              {isCaptured ? (
+                challengeType !== "blink"
+                  ? `${challengeConfig?.icon ?? "🎯"} ${challengeConfig?.sub ?? "Perform the challenge now!"}`
+                  : "👁 Checking liveness — blink once!"
+              ) : isCountdown ? (
+                `Auto-capturing in ${countdown}s… Hold still.`
+              ) : (
+                "⏳ Aligning… Position your face inside the oval."
+              )}
             </Text>
-          ) : isCountdown ? (
-            <Text style={s.statusTxt}>
-              Auto-capturing in <Text style={{ color, fontWeight: "900" }}>{countdown}s</Text>
-              …  Keep your head still.
-            </Text>
-          ) : (
-            <Text style={s.statusTxt}>
-              ⏳ Aligning…  Position your face inside the oval.
-            </Text>
-          )}
+          </View>
         </View>
-      </View>
+      </BlurView>
 
       {isFlashing && (
         <View
@@ -453,43 +465,61 @@ const s = StyleSheet.create({
   permSub: { color: "#94A3B8", fontSize: 15, textAlign: "center", marginBottom: 24, lineHeight: 22 },
   permBtn: { color: "#6366F1", fontSize: 16, fontWeight: "700" },
   banner: {
-    paddingTop: 52,
-    paddingHorizontal: 80,
-    paddingBottom: 12,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+  },
+  headerRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "space-between",
+  },
+  circleCloseBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.2,
+    borderColor: "rgba(255, 255, 255, 0.25)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  circleCloseBtnText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
   },
   bannerTitle: {
     color: "#FFF",
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
     letterSpacing: 0.3,
   },
   bannerSub: {
     color: "#CBD5E1",
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 5,
-    lineHeight: 19,
-  },
-  cancelBtn: {
-    position: "absolute",
-    top: 50,
-    left: 16,
-    zIndex: 110,
-    backgroundColor: "rgba(15, 23, 42, 0.75)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  cancelBtnText: {
-    color: "#FFF",
     fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 17,
   },
   ovalArea: {
     flex: 1,
@@ -539,11 +569,18 @@ const s = StyleSheet.create({
   arrowL: { left: SW * 0.04 },
   arrowR: { right: SW * 0.04 },
   footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     paddingBottom: 44,
     paddingHorizontal: 24,
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingTop: 14,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
   },
   statusPill: {
     paddingHorizontal: 20,
@@ -551,6 +588,16 @@ const s = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     maxWidth: "100%",
+  },
+  statusPillContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  indicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   statusDefault: {
     borderColor: "#334155",
