@@ -468,6 +468,36 @@ export const LecturerDashboardScreen: React.FC = () => {
           <Text style={styles.historyCardArrow}>❯</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.historyCardLink}
+          onPress={() => router.push(ROUTES.APP.PAYSLIPS)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.historyCardContent}>
+            <Text style={styles.historyCardEmoji}>💰</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.historyCardTitle}>Payslips</Text>
+              <Text style={styles.historyCardSubtitle}>Monthly salary and deductions</Text>
+            </View>
+          </View>
+          <Text style={styles.historyCardArrow}>❯</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.historyCardLink}
+          onPress={() => router.push(ROUTES.APP.NOTIFICATIONS)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.historyCardContent}>
+            <Text style={styles.historyCardEmoji}>🔔</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.historyCardTitle}>Notifications</Text>
+              <Text style={styles.historyCardSubtitle}>Correction reviews, approvals and alerts</Text>
+            </View>
+          </View>
+          <Text style={styles.historyCardArrow}>❯</Text>
+        </TouchableOpacity>
+
         {/* HOD Biometric Reset Portal Card Link */}
         {isHodOrAdmin && (
           <TouchableOpacity

@@ -194,9 +194,17 @@ export const ConductorScreen: React.FC = () => {
       showHeader={true}
       showBack={false}
       right={
-        <TouchableOpacity onPress={() => router.push(ROUTES.APP.DRIVER_LEAVE)} hitSlop={10}>
-          <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 16 }}>
+          <TouchableOpacity onPress={() => router.push(ROUTES.APP.DRIVER_NOTIFICATIONS)} hitSlop={10}>
+            <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push(ROUTES.APP.DRIVER_PAYSLIPS)} hitSlop={10}>
+            <Ionicons name="wallet-outline" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push(ROUTES.APP.DRIVER_LEAVE)} hitSlop={10}>
+            <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
       }
       style={styles.container}
       contentContainerStyle={styles.content}

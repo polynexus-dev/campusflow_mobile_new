@@ -22,10 +22,18 @@ export const ROUTES = {
     LEAVE: "/(student)/leave" as const,
     LIBRARY: "/(student)/library" as const,
     PROFILE_STANDALONE: "/(student)/my-profile" as const,
+    EXAMS: "/(student)/exams" as const,
+    PAYSLIPS: "/(student)/payslips" as const,
+    NOTIFICATIONS: "/(student)/notifications" as const,
+    TRANSCRIPT: "/(student)/transcript" as const,
+    CLEARANCE: "/(student)/clearance" as const,
     DRIVER_DASHBOARD: "/(driver)/(tabs)/dashboard" as const,
     DRIVER_PASSENGERS: "/(driver)/(tabs)/passengers" as const,
     DRIVER_PROFILE: "/(driver)/(tabs)/profile" as const,
     DRIVER_LEAVE: "/(driver)/leave" as const,
+    DRIVER_PAYSLIPS: "/(driver)/payslips" as const,
+    DRIVER_NOTIFICATIONS: "/(driver)/notifications" as const,
+    GUARDIAN_HOME: "/(guardian)" as const,
   },
 } as const;
 

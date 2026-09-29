@@ -53,6 +53,36 @@ export const SupportStaffDashboardScreen: React.FC = () => {
 
         <TouchableOpacity
           style={styles.cardLink}
+          onPress={() => router.push(ROUTES.APP.PAYSLIPS)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cardContent}>
+            <Text style={styles.cardEmoji}>💰</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Payslips</Text>
+              <Text style={styles.cardSubtitle}>Monthly salary and deductions</Text>
+            </View>
+          </View>
+          <Text style={styles.cardArrow}>❯</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.cardLink}
+          onPress={() => router.push(ROUTES.APP.NOTIFICATIONS)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cardContent}>
+            <Text style={styles.cardEmoji}>🔔</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Notifications</Text>
+              <Text style={styles.cardSubtitle}>Approvals and alerts</Text>
+            </View>
+          </View>
+          <Text style={styles.cardArrow}>❯</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.cardLink}
           onPress={() => router.push(ROUTES.APP.ANNOUNCEMENTS)}
           activeOpacity={0.7}
         >

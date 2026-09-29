@@ -19,6 +19,7 @@
     "expo-location": "~56.0.22",
     "expo-navigation-bar": "~56.0.3",
     "expo-router": "~56.2.16",
+    "expo-secure-store": "~56.0.4",
     "expo-status-bar": "~56.0.4",
     "nativewind": "^4.0.36",
     "react": "19.2.3",

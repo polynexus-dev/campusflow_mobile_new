@@ -26,7 +26,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAppGroup = segments[0] === "(student)" || segments[0] === "(driver)";
+    const inAppGroup = segments[0] === "(student)" || segments[0] === "(driver)" || segments[0] === "(guardian)";
     const inConsentGroup = segments[0] === "(consent)";
 
     if (!isAuthenticated) {
@@ -44,7 +44,11 @@ function RootLayoutNav() {
       } else {
         // Enforce strict role-based route separation
         const isDriver = hasBusConductorAccess(user);
-        if (isDriver) {
+        if (user?.role === "guardian") {
+          if (segments[0] !== "(guardian)" && segments[0] !== "(consent)") {
+            router.replace("/(guardian)");
+          }
+        } else if (isDriver) {
           if (segments[0] !== "(driver)" && segments[0] !== "(consent)") {
             router.replace("/(driver)/(tabs)/dashboard");
           }
@@ -70,6 +74,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(student)" />
       <Stack.Screen name="(driver)" />
+      <Stack.Screen name="(guardian)" />
       <Stack.Screen name="(consent)" />
     </Stack>
   );

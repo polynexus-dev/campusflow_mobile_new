@@ -159,7 +159,9 @@ export const LoginScreen: React.FC = () => {
       // Passengers / Profile experience instead of the student tabs — same
       // gate app/index.tsx and app/_layout.tsx use, since this redirect
       // fires before either of those ever gets a chance to run.
-      if (hasBusConductorAccess(userProfile)) {
+      if (userProfile.role === "guardian") {
+        router.replace(ROUTES.APP.GUARDIAN_HOME);
+      } else if (hasBusConductorAccess(userProfile)) {
         router.replace(ROUTES.APP.DRIVER_DASHBOARD);
       } else {
         router.replace(ROUTES.APP.DASHBOARD);

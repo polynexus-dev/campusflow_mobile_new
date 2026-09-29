@@ -7,6 +7,9 @@ export default function Index() {
   const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated) {
+    if (user?.role === "guardian") {
+      return <Redirect href="/(guardian)" />;
+    }
     if (hasBusConductorAccess(user)) {
       return <Redirect href="/(driver)/(tabs)/dashboard" />;
     }
