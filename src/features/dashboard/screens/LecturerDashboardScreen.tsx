@@ -118,10 +118,13 @@ export const LecturerDashboardScreen: React.FC = () => {
       const list = await attendanceApi.getLectures();
       const rawLectures = Array.isArray(list) ? list : list.results || [];
 
-      // Filter for today's lectures
+      // Filter for today's lectures that this user actually teaches — Admins
+      // get the whole college's timetable from /lectures/, and the per-lecture
+      // status/check-in endpoints are faculty-only (403 for anyone else).
       const todayDate = new Date();
       const todayLectures = rawLectures.filter((l: any) => {
         if (!l.start_time) return false;
+        if (l.faculty_username && l.faculty_username !== user?.username) return false;
         const start = parseDateSafe(l.start_time);
         return (
           start.getDate() === todayDate.getDate() &&
@@ -166,7 +169,7 @@ export const LecturerDashboardScreen: React.FC = () => {
       setLoadingLectures(false);
       setRefreshing(false);
     }
-  }, [isHodOrAdmin]);
+  }, [isHodOrAdmin, user?.username]);
 
   useEffect(() => {
     fetchLecturesData();

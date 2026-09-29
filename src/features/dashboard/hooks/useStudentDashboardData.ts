@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import httpClient from "@services/api/httpClient";
+import { useAuthStore } from "@store/authStore";
 import { feeApi } from "@/features/fees/services/feeApi";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 import { libraryApi } from "@/features/library/api/libraryApi";
@@ -45,9 +46,14 @@ export function useStudentDashboardData() {
 
   const load = useCallback(async () => {
     const now = new Date();
+    // The attendance summary is student-only on the backend (403 for staff);
+    // skip it rather than raise an error if a non-student ever lands here.
+    const isStudent = useAuthStore.getState().user?.role?.toLowerCase() === "student";
     const [attendanceRes, invoicesRes, subsRes, liveRes, lecturesRes, assignmentsRes, issuesRes, announcementsRes, unreadRes] =
       await Promise.allSettled([
-        httpClient.get("api/student/attendance-summary/").then((r) => r.data),
+        isStudent
+          ? httpClient.get("api/student/attendance-summary/").then((r) => r.data)
+          : Promise.resolve(null),
         feeApi.getInvoices(),
         httpClient.get("api/bus/subscriptions/").then((r) => asList(r.data)),
         httpClient.get("api/bus/live/").then((r) => asList(r.data)),

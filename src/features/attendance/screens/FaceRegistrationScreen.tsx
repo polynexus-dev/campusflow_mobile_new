@@ -220,7 +220,7 @@ export const FaceRegistrationScreen: React.FC = () => {
           </View>
 
           <Text style={styles.agreementText}>
-            By clicking "Agree & Proceed", you provide clear, unconditional, and informed consent to CampusFlow to collect and process your biometric templates for campus ERP services.
+            By clicking "Agree & Proceed", you provide clear, unconditional, and informed consent to CampusNexus to collect and process your biometric templates for campus ERP services.
           </Text>
 
           <TouchableOpacity

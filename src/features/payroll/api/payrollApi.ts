@@ -20,9 +20,10 @@ export interface Payslip {
 }
 
 export const payrollApi = {
-  // For non-admin staff the backend returns only the caller's own payslips.
+  // Always the caller's own payslips — `mine` stops the backend returning
+  // every employee's payslip when the caller is a College Admin.
   getPayslips: async (params?: { year?: number }): Promise<Payslip[]> => {
-    const response = await httpClient.get("/payroll/payslips/", { params });
+    const response = await httpClient.get("/payroll/payslips/", { params: { ...params, mine: 1 } });
     return response.data;
   },
 

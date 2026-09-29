@@ -23,8 +23,11 @@ export const LeaveManagementScreen: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const isStudent = user?.student_profile !== undefined;
   const isFacultyOrAbove = user?.role !== "Student";
+  // Who gets the Approvals tab; each request's `can_act` (from the backend)
+  // decides whether Approve/Reject show — e.g. HOD leave is Principal-only.
   const canApproveLeave =
     user?.role === "Department Head" ||
+    user?.role === "Principal" ||
     user?.role === "Management" ||
     user?.role === "Administrator" ||
     user?.role === "SaaS Admin";
@@ -335,6 +338,9 @@ export const LeaveManagementScreen: React.FC = () => {
                     <View style={styles.approvalHeader}>
                       <View>
                         <Text style={styles.applicantName}>{request.full_name || request.username}</Text>
+                        {request.requester_role === "Department Head" ? (
+                          <Text style={styles.requesterRole}>Head of Department</Text>
+                        ) : null}
                       </View>
                       <Text style={styles.leaveTypeTag}>{request.leave_type_name || request.leave_type}</Text>
                     </View>
@@ -344,6 +350,13 @@ export const LeaveManagementScreen: React.FC = () => {
                     </Text>
                     <Text style={styles.approvalReason}>"{request.reason}"</Text>
 
+                    {request.can_act === false ? (
+                      <Text style={styles.viewOnlyText}>
+                        {request.requester_role === "Department Head"
+                          ? "Awaiting the Principal's decision"
+                          : "View only"}
+                      </Text>
+                    ) : (
                     <View style={styles.approvalActionsRow}>
                       <TouchableOpacity
                         style={[styles.approvalBtn, styles.approveBtn]}
@@ -358,6 +371,7 @@ export const LeaveManagementScreen: React.FC = () => {
                         <Text style={styles.btnText}>Reject</Text>
                       </TouchableOpacity>
                     </View>
+                    )}
                   </View>
                 ))
               )}
@@ -670,6 +684,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     color: COLORS.text,
+  },
+  requesterRole: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.primary,
+    marginTop: 2,
+  },
+  viewOnlyText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+    fontStyle: "italic",
+    marginTop: 12,
   },
   applicantDept: {
     fontSize: 12,

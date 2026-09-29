@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "demo-cammpusnexus",
+    "name": "CampusNexus",
     "slug": "demo-cammpusnexus",
     "scheme": "demo-cammpusnexus",
     "version": "1.0.0",
@@ -8,7 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.campusflowmobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +26,22 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use your camera to capture your photo for attendance and scan bus QR codes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to verify attendance and share bus location."
+        }
+      ],
+      "expo-font"
     ]
   }
 }

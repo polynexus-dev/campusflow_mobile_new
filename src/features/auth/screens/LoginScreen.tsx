@@ -195,7 +195,7 @@ export const LoginScreen: React.FC = () => {
         </View>
 
         <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Sign in to CampusFlow with your college account.</Text>
+        <Text style={styles.subtitle}>Sign in to CampusNexus with your college account.</Text>
 
         <View style={styles.formContainer}>
           <CustomInput
@@ -258,7 +258,7 @@ export const LoginScreen: React.FC = () => {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            New to CampusFlow?{" "}
+            New to CampusNexus?{" "}
             <Text
               style={styles.footerLink}
               onPress={() => router.push(ROUTES.AUTH.REGISTER)}

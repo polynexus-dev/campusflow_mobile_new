@@ -21,7 +21,8 @@ interface CustomInputProps {
   secureTextEntry?: boolean;
   error?: string;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
-  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad" | "number-pad";
+  maxLength?: number;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
   error,
   autoCapitalize = "none",
   keyboardType = "default",
+  maxLength,
   className,
 }) => {
   const [isSecure, setIsSecure] = useState(secureTextEntry);
@@ -61,6 +63,8 @@ const CustomInput: React.FC<CustomInputProps> = ({
           secureTextEntry={isSecure}
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
+          maxLength={maxLength}
+          numberOfLines={1}
           className="flex-1 h-full text-textMain text-[15px] font-medium p-0"
         />
         {secureTextEntry && (
@@ -82,8 +86,15 @@ const CustomInput: React.FC<CustomInputProps> = ({
   );
 };
 
+const STEPS = [
+  { title: "About you", fields: ["firstName", "lastName", "email", "contactNumber", "dateOfBirth"] },
+  { title: "College details", fields: ["studentId", "departmentId", "programEnrolledIn"] },
+  { title: "Account", fields: ["username", "password", "password2"] },
+];
+
 export const RegisterScreen: React.FC = () => {
   const router = useRouter();
+  const [step, setStep] = useState(0);
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -98,6 +109,15 @@ export const RegisterScreen: React.FC = () => {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Keep digits only and insert the dashes, so typing 20020515 gives 2002-05-15
+  const handleDobChange = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    let formatted = digits;
+    if (digits.length > 6) formatted = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+    else if (digits.length > 4) formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    setDateOfBirth(formatted);
+  };
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -114,13 +134,29 @@ export const RegisterScreen: React.FC = () => {
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) nextErrors.dateOfBirth = "Use YYYY-MM-DD format";
     if (!password) nextErrors.password = "Password is required";
     if (password !== password2) nextErrors.password2 = "Passwords do not match";
-    
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return nextErrors;
+  };
+
+  // Validates only the fields on the current step so users can move forward
+  const handleNext = () => {
+    const allErrors = validate();
+    const stepErrors: Record<string, string> = {};
+    STEPS[step].fields.forEach((field) => {
+      if (allErrors[field]) stepErrors[field] = allErrors[field];
+    });
+    setErrors(stepErrors);
+    if (Object.keys(stepErrors).length === 0) setStep(step + 1);
   };
 
   const handleRegister = async () => {
-    if (!validate()) return;
+    const allErrors = validate();
+    setErrors(allErrors);
+    if (Object.keys(allErrors).length > 0) {
+      // Jump back to the first step that still has a problem
+      const badStep = STEPS.findIndex((s) => s.fields.some((f) => allErrors[f]));
+      if (badStep !== -1) setStep(badStep);
+      return;
+    }
     setLoading(true);
  
     try {
@@ -186,7 +222,7 @@ export const RegisterScreen: React.FC = () => {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName={`grow p-6 pb-16 ${Platform.OS === "ios" ? "pt-16" : "pt-12"}`}
+        contentContainerClassName={`grow justify-center p-6 pb-10 ${Platform.OS === "ios" ? "pt-16" : "pt-12"}`}
         keyboardShouldPersistTaps="handled"
       >
         <View className="items-center mb-7">
@@ -194,7 +230,24 @@ export const RegisterScreen: React.FC = () => {
           <Text className="text-sm text-white/70 mt-1.5 font-semibold tracking-[0.5px]">Register as a CampusNexus Student</Text>
         </View>
 
-        <View className="bg-surface rounded-[28px] p-6 border border-white/15 shadow-2xl mb-5">
+        <View className="bg-surface rounded-[28px] p-6 border border-white/15 shadow-2xl">
+          {/* Step indicator */}
+          <View className="flex-row mb-2.5">
+            {STEPS.map((s, i) => (
+              <View
+                key={s.title}
+                className={`flex-1 h-1.5 rounded-full ${i < STEPS.length - 1 ? "mr-1.5" : ""} ${
+                  i <= step ? "bg-primary" : "bg-[#E2E8F0]"
+                }`}
+              />
+            ))}
+          </View>
+          <Text className="text-xs font-semibold text-textSecondary mb-6">
+            Step {step + 1} of {STEPS.length} · <Text className="font-bold text-textMain">{STEPS[step].title}</Text>
+          </Text>
+
+          {step === 0 && (
+          <>
           <View className="flex-row w-full">
             <CustomInput
               label="First Name"
@@ -217,15 +270,6 @@ export const RegisterScreen: React.FC = () => {
           </View>
 
           <CustomInput
-            label="Username"
-            placeholder="johndoe"
-            value={username}
-            onChangeText={setUsername}
-            icon="user"
-            error={errors.username}
-          />
-
-          <CustomInput
             label="Email Address"
             placeholder="john.doe@college.edu.in"
             value={email}
@@ -233,15 +277,6 @@ export const RegisterScreen: React.FC = () => {
             icon="mail"
             keyboardType="email-address"
             error={errors.email}
-          />
-
-          <CustomInput
-            label="Student ID"
-            placeholder="e.g. STU123"
-            value={studentId}
-            onChangeText={setStudentId}
-            icon="credit-card"
-            error={errors.studentId}
           />
 
           <CustomInput
@@ -255,12 +290,27 @@ export const RegisterScreen: React.FC = () => {
           />
 
           <CustomInput
-            label="Date of Birth"
-            placeholder="YYYY-MM-DD (e.g. 2002-05-15)"
+            label="Date of Birth (YYYY-MM-DD)"
+            placeholder="e.g. 2002-05-15"
             value={dateOfBirth}
-            onChangeText={setDateOfBirth}
+            onChangeText={handleDobChange}
             icon="calendar"
+            keyboardType="number-pad"
+            maxLength={10}
             error={errors.dateOfBirth}
+          />
+          </>
+          )}
+
+          {step === 1 && (
+          <>
+          <CustomInput
+            label="Student ID"
+            placeholder="e.g. STU123"
+            value={studentId}
+            onChangeText={setStudentId}
+            icon="credit-card"
+            error={errors.studentId}
           />
 
           <View className="flex-row w-full">
@@ -284,6 +334,19 @@ export const RegisterScreen: React.FC = () => {
               error={errors.programEnrolledIn}
             />
           </View>
+          </>
+          )}
+
+          {step === 2 && (
+          <>
+          <CustomInput
+            label="Username"
+            placeholder="johndoe"
+            value={username}
+            onChangeText={setUsername}
+            icon="user"
+            error={errors.username}
+          />
 
           <CustomInput
             label="Password"
@@ -304,13 +367,28 @@ export const RegisterScreen: React.FC = () => {
             secureTextEntry
             error={errors.password2}
           />
+          </>
+          )}
 
-          <Button
-            title="Register Account"
-            onPress={handleRegister}
-            loading={loading}
-            className="mt-2 rounded-[14px] h-[54px] shadow-lg shadow-primary"
-          />
+          <View className="flex-row mt-2">
+            {step > 0 && (
+              <Button
+                title="Back"
+                variant="outline"
+                onPress={() => {
+                  setErrors({});
+                  setStep(step - 1);
+                }}
+                className="flex-1 mr-3 rounded-[14px] h-[54px]"
+              />
+            )}
+            <Button
+              title={step < STEPS.length - 1 ? "Next" : "Register Account"}
+              onPress={step < STEPS.length - 1 ? handleNext : handleRegister}
+              loading={loading}
+              className={`${step > 0 ? "flex-[2]" : "flex-1"} rounded-[14px] h-[54px] shadow-lg shadow-primary`}
+            />
+          </View>
 
           <View className="flex-row justify-center mt-6">
             <Text className="text-textSecondary text-sm font-medium">Already registered? </Text>

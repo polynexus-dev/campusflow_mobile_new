@@ -51,7 +51,8 @@ export const ConsentScreen: React.FC = () => {
   // Faculty/Support Staff never enroll a face for attendance (that's a
   // Student-only flow), so their consent notice omits the biometric clause
   // instead of asking them to accept collection of data that isn't taken.
-  const isBiometricRole = user?.role !== "Faculty" && user?.role !== "Support Staff";
+  const isBiometricRole =
+    user?.role !== "Faculty" && user?.role !== "Support Staff" && user?.role !== "Principal";
 
   return (
     <SafeAreaView style={styles.container}>

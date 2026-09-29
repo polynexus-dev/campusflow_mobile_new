@@ -6,15 +6,19 @@ import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
 import { assignmentsApi } from "../api/assignmentsApi";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+import { useAuthStore } from "@store/authStore";
 
 type PickedFile = { uri: string; name: string; mimeType?: string };
 
 export const AssignmentDetailScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const role = useAuthStore((state) => state.user?.role);
+  const isStaff = !!role && role.toLowerCase() !== "student";
 
   const [assignment, setAssignment] = useState<any>(null);
   const [submission, setSubmission] = useState<any>(null);
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Submission Form State
@@ -30,6 +34,8 @@ export const AssignmentDetailScreen: React.FC = () => {
       setAssignment(assignData);
 
       const subList = await assignmentsApi.getSubmissions(id);
+      // Staff get every student's submission; students get only their own
+      setAllSubmissions(subList || []);
       if (subList && subList.length > 0) {
         setSubmission(subList[0]);
       } else {
@@ -127,8 +133,54 @@ export const AssignmentDetailScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Submission Status Section */}
-      {submission ? (
+      {/* Faculty view: who has submitted */}
+      {isStaff ? (
+        <View style={styles.card}>
+          <View style={styles.submittedHeader}>
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Submissions</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>{allSubmissions.length}</Text>
+            </View>
+          </View>
+          <Text style={styles.subMeta}>
+            {isPastDue ? "Submission window closed" : "Accepting submissions"}
+          </Text>
+
+          {allSubmissions.length === 0 ? (
+            <Text style={styles.pendingGradeText}>No students have submitted yet.</Text>
+          ) : (
+            allSubmissions.map((s, index) => (
+              <View
+                key={s.id}
+                style={[styles.studentRow, index === allSubmissions.length - 1 && { borderBottomWidth: 0 }]}
+              >
+                <View style={styles.studentRowHeader}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={styles.studentName}>{s.student_name}</Text>
+                    <Text style={styles.studentMeta}>
+                      {s.student_username} · {new Date(s.submitted_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    s.status === "graded" ? styles.statusBadgeGraded : styles.statusBadgeSubmitted
+                  ]}>
+                    <Text style={styles.statusBadgeText}>
+                      {s.status === "graded" && s.grade ? `GRADE: ${s.grade}` : s.status.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                {s.text_submission ? (
+                  <Text style={styles.studentResponse} numberOfLines={3}>{s.text_submission}</Text>
+                ) : null}
+                {s.attachment ? (
+                  <Text style={styles.studentFile}>📎 {s.attachment.split("/").pop()}</Text>
+                ) : null}
+              </View>
+            ))
+          )}
+        </View>
+      ) : submission ? (
         <View style={[styles.card, styles.submittedCard]}>
           <View style={styles.submittedHeader}>
             <Text style={styles.submittedTitle}>✓ Submissions Logs</Text>
@@ -511,6 +563,48 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: COLORS.primary,
+  },
+  countBadge: {
+    backgroundColor: "rgba(74, 21, 75, 0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countBadgeText: {
+    color: COLORS.primary,
+    fontWeight: "800",
+    fontSize: 13,
+  },
+  studentRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  studentRowHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  studentName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  studentMeta: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  studentResponse: {
+    fontSize: 13,
+    color: COLORS.text,
+    lineHeight: 18,
+    marginTop: 8,
+  },
+  studentFile: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: "500",
+    marginTop: 6,
   },
 });
 

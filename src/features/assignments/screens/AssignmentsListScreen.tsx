@@ -5,9 +5,13 @@ import { COLORS } from "@/shared/theme/colors";
 import { assignmentsApi } from "../api/assignmentsApi";
 import { ROUTES } from "@/constants/route";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
+import { useAuthStore } from "@store/authStore";
 
 export const AssignmentsListScreen: React.FC = () => {
   const router = useRouter();
+  const role = useAuthStore((state) => state.user?.role);
+  // Faculty/HOD/Admin see the assignments they posted and how many students submitted
+  const isStaff = !!role && role.toLowerCase() !== "student";
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +42,7 @@ export const AssignmentsListScreen: React.FC = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) {
+      if (isStaff) return { text: "Closed", isOverdue: false, isCritical: false };
       return { text: `Overdue by ${Math.abs(diffDays)}d`, isOverdue: true, isCritical: true };
     } else if (diffDays === 0) {
       return { text: "Due Today", isOverdue: false, isCritical: true };
@@ -58,7 +63,9 @@ export const AssignmentsListScreen: React.FC = () => {
       disableBottomPadding={true}
     >
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      <Text style={styles.subtitle}>Track and submit your coursework tasks</Text>
+      <Text style={styles.subtitle}>
+        {isStaff ? "Assignments you've posted and their submissions" : "Track and submit your coursework tasks"}
+      </Text>
 
       {/* Main List */}
       {loading ? (
@@ -68,9 +75,11 @@ export const AssignmentsListScreen: React.FC = () => {
         </View>
       ) : assignments.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🎉</Text>
-          <Text style={styles.emptyText}>All Caught Up!</Text>
-          <Text style={styles.emptySubText}>No assignments posted for your department.</Text>
+          <Text style={styles.emptyIcon}>{isStaff ? "📝" : "🎉"}</Text>
+          <Text style={styles.emptyText}>{isStaff ? "No Assignments Yet" : "All Caught Up!"}</Text>
+          <Text style={styles.emptySubText}>
+            {isStaff ? "Assignments you post will appear here." : "No assignments posted for your department."}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -109,7 +118,13 @@ export const AssignmentsListScreen: React.FC = () => {
                 <View style={styles.divider} />
                 
                 <View style={styles.cardFooter}>
-                  <Text style={styles.facultyText}>Posted by: {item.created_by}</Text>
+                  {isStaff ? (
+                    <Text style={styles.submissionCountText}>
+                      👥 {item.submission_count ?? 0} submitted
+                    </Text>
+                  ) : (
+                    <Text style={styles.facultyText}>Posted by: {item.created_by}</Text>
+                  )}
                   <Text style={styles.dateText}>
                     Due: {new Date(item.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
                   </Text>
@@ -242,6 +257,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     fontWeight: "500",
+  },
+  submissionCountText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: "700",
   },
   dateText: {
     fontSize: 12,

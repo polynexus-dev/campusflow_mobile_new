@@ -35,7 +35,7 @@ export const PaymentCheckoutScreen: React.FC = () => {
             amount: ${JSON.stringify(params.amount)},
             currency: ${JSON.stringify(params.currency)},
             order_id: ${JSON.stringify(params.orderId)},
-            name: "CampusFlow Fees",
+            name: "CampusNexus Fees",
             handler: function (response) {
               post({ type: "success", ...response });
             },
