@@ -14,7 +14,7 @@ export interface ChildSummary {
 }
 
 export interface ChildAttendance {
-  percentage: number;
+  percentage: number | null;
   present_days: number;
   total_days_evaluated: number;
   calendar: { date: string; day_name: string; status: "Present" | "Absent" | "Leave" | "Holiday" }[];
@@ -64,6 +64,11 @@ export const parentApi = {
   linkChild: async (student_id: string, verification_key: string): Promise<string> => {
     const res = await httpClient.post("api/parent/children/link/", { student_id, verification_key });
     return res.data.message;
+  },
+
+  // Admin-reviewed fallback when the parent doesn't know the DOB / admission number.
+  requestLink: async (student_code: string, contact_phone: string, claimed_relationship: string): Promise<void> => {
+    await httpClient.post("api/parent-link-requests/", { student_code, contact_phone, claimed_relationship });
   },
 
   getAttendance: async (childId: number): Promise<ChildAttendance> =>

@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 // Everything else (cached user JSON, tenant schema, device id) stays in
 // AsyncStorage: it isn't secret, and SecureStore can reject values over ~2 KB.
 // SecureStore doesn't exist on web, so web falls back to AsyncStorage.
-const SECURE_KEYS = new Set(["cf_token"]);
+const SECURE_KEYS = new Set(["cf_token", "cf_refresh"]);
 
 const useSecureStore = (key: string) => SECURE_KEYS.has(key) && Platform.OS !== "web";
 

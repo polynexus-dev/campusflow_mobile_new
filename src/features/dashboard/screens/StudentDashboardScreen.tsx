@@ -375,18 +375,18 @@ export const StudentDashboardScreen: React.FC = () => {
 
           {/* Second Row */}
           <View className="flex-row gap-3">
-            {/* Leave */}
+            {/* Clearance (leave is staff-only on the backend, so students get no Leave tile) */}
             <TouchableOpacity
-              onPress={() => router.push(ROUTES.APP.LEAVE)}
+              onPress={() => router.push(ROUTES.APP.CLEARANCE)}
               activeOpacity={0.9}
               className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
             >
-              <View className="w-11 h-11 bg-purple-50 border border-purple-100 rounded-2xl justify-center items-center">
-                <Feather name="calendar" size={18} color="#9333ea" />
+              <View className="w-11 h-11 bg-sky-50 border border-sky-100 rounded-2xl justify-center items-center">
+                <Feather name="check-circle" size={18} color="#0284c7" />
               </View>
               <View className="flex-1">
-                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Leave</Text>
-                <Text className="text-slate-400 text-[11px] font-bold mt-0.5" numberOfLines={1}>Apply & track</Text>
+                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Clearance</Text>
+                <Text className="text-slate-400 text-[11px] font-bold mt-0.5" numberOfLines={1}>No-dues status</Text>
               </View>
             </TouchableOpacity>
 
@@ -434,24 +434,6 @@ export const StudentDashboardScreen: React.FC = () => {
                 <Text className="text-slate-400 text-[11px] font-bold mt-0.5" numberOfLines={1}>SGPA & CGPA</Text>
               </View>
             </TouchableOpacity>
-          </View>
-
-          {/* Fourth Row */}
-          <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={() => router.push(ROUTES.APP.CLEARANCE)}
-              activeOpacity={0.9}
-              className="flex-1 bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex-row items-center gap-3.5"
-            >
-              <View className="w-11 h-11 bg-sky-50 border border-sky-100 rounded-2xl justify-center items-center">
-                <Feather name="check-circle" size={18} color="#0284c7" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-slate-800 text-[14px] font-black" numberOfLines={1}>Clearance</Text>
-                <Text className="text-slate-400 text-[11px] font-bold mt-0.5" numberOfLines={1}>No-dues status</Text>
-              </View>
-            </TouchableOpacity>
-            <View className="flex-1" />
           </View>
         </View>
       </ScrollView>

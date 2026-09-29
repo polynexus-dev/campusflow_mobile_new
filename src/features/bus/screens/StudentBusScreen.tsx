@@ -111,6 +111,9 @@ export const StudentBusScreen: React.FC = () => {
 
   // Real-time bus tracking coordinates via WebSocketr
   const [liveLocation, setLiveLocation] = useState<{ [routeId: number]: { lat: number; lng: number } }>({});
+  // Routes that sent a WebSocket position this session; "simulated" = the
+  // demo college's simulator, not a real bus.
+  const [liveRoutes, setLiveRoutes] = useState<{ [routeId: number]: "live" | "simulated" }>({});
 
   const [permission, requestPermission] = useCameraPermissions();
   const deviceId = useAuthStore((state) => state.deviceId);
@@ -163,14 +166,16 @@ export const StudentBusScreen: React.FC = () => {
   // Trigger warning modal when active route has no running bus
   useEffect(() => {
     if (selectedRouteId !== null && buses.length > 0) {
-      const hasBus = buses.some((b) => b.route?.id === selectedRouteId);
+      const hasBus =
+        !!liveRoutes[selectedRouteId] ||
+        buses.some((b) => b.route?.id === selectedRouteId && b.is_live !== false);
       if (!hasBus) {
         setShowNoBusModal(true);
       } else {
         setShowNoBusModal(false);
       }
     }
-  }, [selectedRouteId, buses]);
+  }, [selectedRouteId, buses, liveRoutes]);
 
   // Set up WebSocket connection for tracking active route
   useEffect(() => {
@@ -202,6 +207,7 @@ export const StudentBusScreen: React.FC = () => {
               ...prev,
               [data.route.id]: { lat: data.lat, lng: data.lng },
             }));
+            setLiveRoutes((prev) => ({ ...prev, [data.route.id]: data.simulated ? "simulated" : "live" }));
           }
         } catch (err) {
           console.error("[WS Student] Parse error:", err);
@@ -262,9 +268,14 @@ export const StudentBusScreen: React.FC = () => {
   };
 
   // Find active bus for the selected route
-  const activeBus = buses.find((b) => b.route?.id === selectedRouteId);
+  // routeBus may be the backend's placeholder (is_live=false) — still useful
+  // for drawing the route's stops. activeBus is only set for a bus that is
+  // actually running, so no ETA is shown for a parked placeholder.
+  const routeBus = buses.find((b) => b.route?.id === selectedRouteId);
+  const routeLiveState = selectedRouteId !== null ? liveRoutes[selectedRouteId] : undefined;
+  const activeBus = routeBus && (routeBus.is_live !== false || routeLiveState) ? routeBus : undefined;
   const currentLoc = activeBus ? (liveLocation[selectedRouteId || 0] || { lat: activeBus.lat, lng: activeBus.lng }) : null;
-  const stops = activeBus?.route?.stops || [];
+  const stops = routeBus?.route?.stops || [];
 
   // Helper to calculate distance and ETA for a bus
   const calculateStopETA = (bus: LiveBusData) => {
@@ -764,7 +775,9 @@ export const StudentBusScreen: React.FC = () => {
                 </View>
                 <View className="flex-row items-center bg-[#DCFCE7] px-3 py-1.5 rounded-full">
                   <View className="w-2 h-2 rounded-full bg-[#16A34A] mr-2" />
-                  <Text className="text-xs font-bold text-[#16A34A]">En route</Text>
+                  <Text className="text-xs font-bold text-[#16A34A]">
+                    {routeLiveState === "simulated" ? "Demo" : "En route"}
+                  </Text>
                 </View>
               </View>
 

@@ -28,6 +28,7 @@ interface UserProfile {
 interface AuthState {
   user: UserProfile | null;
   token: string | null;
+  refreshToken: string | null;
   collegeDomain: string | null;
   collegeSchema: string | null;
   deviceId: string | null;
@@ -35,7 +36,8 @@ interface AuthState {
   isLoading: boolean;
   
   initializeAuth: () => Promise<void>;
-  setAuth: (user: UserProfile, token: string) => Promise<void>;
+  setAuth: (user: UserProfile, token: string, refreshToken?: string | null) => Promise<void>;
+  setTokens: (token: string, refreshToken?: string | null) => Promise<void>;
   setCollegeDomain: (domain: string | null) => Promise<void>;
   setCollegeSchema: (schema: string | null) => Promise<void>;
   setDeviceId: (deviceId: string) => Promise<void>;
@@ -47,6 +49,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
+  refreshToken: null,
   collegeDomain: null,
   collegeSchema: null,
   deviceId: null,
@@ -56,6 +59,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async () => {
     try {
       const storedToken = await storage.getItem("cf_token");
+      const storedRefresh = await storage.getItem("cf_refresh");
       const storedUser = await storage.getItem("cf_user");
       const storedDomain = await storage.getItem("cf_domain");
       const storedSchema = await storage.getItem("cf_schema");
@@ -63,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({
         token: storedToken,
+        refreshToken: storedRefresh,
         user: storedUser ? JSON.parse(storedUser) : null,
         collegeDomain: storedDomain,
         collegeSchema: storedSchema,
@@ -76,10 +81,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setAuth: async (user, token) => {
+  setAuth: async (user, token, refreshToken) => {
     await storage.setItem("cf_token", token);
+    if (refreshToken) await storage.setItem("cf_refresh", refreshToken);
     await storage.setItem("cf_user", JSON.stringify(user));
-    set({ user, token, isAuthenticated: true });
+    set({ user, token, refreshToken: refreshToken ?? null, isAuthenticated: true });
+  },
+
+  // Called after a token refresh (the backend rotates the refresh token too).
+  setTokens: async (token, refreshToken) => {
+    await storage.setItem("cf_token", token);
+    if (refreshToken) await storage.setItem("cf_refresh", refreshToken);
+    set((state) => ({ token, refreshToken: refreshToken ?? state.refreshToken }));
   },
 
   setCollegeDomain: async (domain) => {
@@ -134,6 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await storage.removeItem("cf_token");
+    await storage.removeItem("cf_refresh");
     await storage.removeItem("cf_user");
     // collegeSchema must not survive logout: httpClient attaches it as the
     // X-Tenant header on every request including the next login attempt,
@@ -144,6 +158,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await storage.removeItem("cf_schema");
     // deviceId is kept — it's the biometric device-lock fingerprint and must
     // stay stable across logins on the same physical device.
-    set({ user: null, token: null, isAuthenticated: false, collegeDomain: null, collegeSchema: null });
+    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, collegeDomain: null, collegeSchema: null });
   },
 }));

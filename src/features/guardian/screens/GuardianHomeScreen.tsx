@@ -25,6 +25,10 @@ export const GuardianHomeScreen: React.FC = () => {
   const [studentId, setStudentId] = useState("");
   const [verificationKey, setVerificationKey] = useState("");
   const [linking, setLinking] = useState(false);
+  // "Ask the college" fallback: an admin-reviewed request instead of DOB/admission no.
+  const [requestMode, setRequestMode] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [relationship, setRelationship] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -63,6 +67,31 @@ export const GuardianHomeScreen: React.FC = () => {
       setLinking(false);
     }
   };
+
+  const submitRequest = async () => {
+    if (!studentId.trim() || !phone.trim()) {
+      Alert.alert("Missing details", "Enter the student ID and your phone number.");
+      return;
+    }
+    try {
+      setLinking(true);
+      await parentApi.requestLink(studentId.trim(), phone.trim(), relationship.trim());
+      setLinkOpen(false);
+      setRequestMode(false);
+      setStudentId("");
+      setPhone("");
+      setRelationship("");
+      Alert.alert("Request sent", "You'll get a notification once the college reviews it.");
+    } catch (err) {
+      Alert.alert("Couldn't send request", errorMessage(err, "Please try again."));
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const inputStyle = {
+    borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: "#0F172A",
+  } as const;
 
   const confirmLogout = () => {
     Alert.alert("Log out", "Are you sure you want to log out?", [
@@ -161,10 +190,10 @@ export const GuardianHomeScreen: React.FC = () => {
         />
       )}
 
-      <Modal visible={linkOpen} transparent animationType="slide" onRequestClose={() => setLinkOpen(false)}>
+      <Modal visible={linkOpen} transparent animationType="slide" onRequestClose={() => { setLinkOpen(false); setRequestMode(false); }}>
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
           <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, gap: 12 }}>
-            <Text style={[s.title, { flex: 0, fontSize: 17 }]}>Link a child</Text>
+            <Text style={[s.title, { flex: 0, fontSize: 17 }]}>{requestMode ? "Ask the college to link you" : "Link a child"}</Text>
             <TextInput
               placeholder="Student ID (e.g. STU001)"
               placeholderTextColor={COLORS.textMuted}
@@ -173,20 +202,39 @@ export const GuardianHomeScreen: React.FC = () => {
               autoCapitalize="characters"
               style={{ borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: "#0F172A" }}
             />
-            <TextInput
-              placeholder="Date of birth (YYYY-MM-DD) or admission no."
-              placeholderTextColor={COLORS.textMuted}
-              value={verificationKey}
-              onChangeText={setVerificationKey}
-              style={{ borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: "#0F172A" }}
-            />
-            <Text style={s.meta}>Don't have these? Contact the college office to link your account.</Text>
+            {requestMode ? (
+              <>
+                <TextInput placeholder="Your phone number" placeholderTextColor={COLORS.textMuted}
+                  value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={inputStyle} />
+                <TextInput placeholder="Relationship (e.g. Mother)" placeholderTextColor={COLORS.textMuted}
+                  value={relationship} onChangeText={setRelationship} style={inputStyle} />
+                <Text style={s.meta}>The college will check your details and may ask you to visit with an ID.</Text>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  placeholder="Date of birth (YYYY-MM-DD) or admission no."
+                  placeholderTextColor={COLORS.textMuted}
+                  value={verificationKey}
+                  onChangeText={setVerificationKey}
+                  style={inputStyle}
+                />
+                <TouchableOpacity onPress={() => setRequestMode(true)}>
+                  <Text style={[s.meta, { color: COLORS.primary, textDecorationLine: "underline" }]}>
+                    Don't have these? Ask the college to link you instead.
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
             <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
-              <TouchableOpacity onPress={() => setLinkOpen(false)} style={[s.tabButton, { backgroundColor: "#E2E8F0" }]}>
-                <Text style={s.tabText}>Cancel</Text>
+              <TouchableOpacity
+                onPress={() => (requestMode ? setRequestMode(false) : setLinkOpen(false))}
+                style={[s.tabButton, { backgroundColor: "#E2E8F0" }]}
+              >
+                <Text style={s.tabText}>{requestMode ? "Back" : "Cancel"}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={submitLink} disabled={linking} style={[s.tabButton, s.activeTabButton]}>
-                {linking ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[s.tabText, s.activeTabText]}>Link</Text>}
+              <TouchableOpacity onPress={requestMode ? submitRequest : submitLink} disabled={linking} style={[s.tabButton, s.activeTabButton]}>
+                {linking ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[s.tabText, s.activeTabText]}>{requestMode ? "Send" : "Link"}</Text>}
               </TouchableOpacity>
             </View>
           </View>

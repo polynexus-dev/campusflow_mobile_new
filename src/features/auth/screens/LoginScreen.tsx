@@ -151,7 +151,7 @@ export const LoginScreen: React.FC = () => {
         } : undefined
       };
 
-      await setAuth(userProfile, response.access);
+      await setAuth(userProfile, response.access, response.refresh);
 
       Alert.alert("Success", `Welcome back, ${userProfile.username}!`);
 

@@ -127,12 +127,56 @@ httpClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+// ── Session renewal ──────────────────────────────────────────────────────
+// Access tokens last 8 hours. On a 401 we swap the refresh token for a new
+// pair once (concurrent 401s share one refresh call) and retry the request;
+// only if that fails does the user get logged out below.
+const NO_REFRESH_ENDPOINTS = ["/login/", "/token/refresh/", "/token/verify/"];
+let refreshInFlight: Promise<string> | null = null;
+
+const refreshAccessToken = (): Promise<string> => {
+  const { refreshToken, collegeSchema, setTokens } = useAuthStore.getState();
+  if (!refreshToken) return Promise.reject(new Error("No refresh token"));
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(
+        buildUrl("api/token/refresh/"),
+        { refresh: refreshToken },
+        { headers: collegeSchema ? { "X-Tenant": collegeSchema } : {}, timeout: 15000 }
+      )
+      .then(async (res) => {
+        await setTokens(res.data.access, res.data.refresh);
+        return res.data.access as string;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+};
+
 // Interceptor for normalizing errors
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const statusCode: number = error?.response?.status ?? 500;
     const endpoint: string = error?.config?.url ?? "unknown";
+    const originalConfig = error?.config;
+    if (
+      statusCode === 401 &&
+      originalConfig &&
+      !originalConfig._retried &&
+      !NO_REFRESH_ENDPOINTS.some((e) => endpoint.includes(e))
+    ) {
+      originalConfig._retried = true;
+      try {
+        const access = await refreshAccessToken();
+        originalConfig.headers = { ...originalConfig.headers, Authorization: `Bearer ${access}` };
+        return httpClient(originalConfig);
+      } catch {
+        // fall through: normal error handling + logout below
+      }
+    }
     let message = "An unexpected error occurred.";
     if (error.response) {
       const data = error.response.data;

@@ -65,7 +65,7 @@ export const GuardianChildScreen: React.FC = () => {
       <View style={[s.statRow, { paddingHorizontal: 0, paddingTop: 0 }]}>
         <View style={s.statCard}>
           <Text style={s.statLabel}>Last 30 days</Text>
-          <Text style={s.statValue}>{attendance.percentage}%</Text>
+          <Text style={s.statValue}>{attendance.percentage != null ? `${attendance.percentage}%` : "—"}</Text>
         </View>
         <View style={s.statCard}>
           <Text style={s.statLabel}>Days present</Text>

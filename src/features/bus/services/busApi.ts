@@ -50,6 +50,9 @@ export interface LiveBusData {
     stops: { name: string; lat: number; lng: number }[];
   } | null;
   last_seen: string;
+  // False for the placeholder the backend returns (parked at the first stop)
+  // when no driver is broadcasting. Only a live bus should get an ETA.
+  is_live?: boolean;
 }
 
 export const busApi = {
