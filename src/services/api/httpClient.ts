@@ -177,32 +177,64 @@ httpClient.interceptors.response.use(
         // fall through: normal error handling + logout below
       }
     }
-    let message = "An unexpected error occurred.";
+    let message = "";
     if (error.response) {
       const data = error.response.data;
       if (data && typeof data === "object") {
-        if (data.error) message = data.error;
-        else if (data.detail) message = data.detail;
-        else if (data.message) message = data.message;
+        if (data.error) message = String(data.error);
+        else if (data.detail) message = String(data.detail);
+        else if (data.message) message = String(data.message);
         else {
-          // Flatten standard DRF serializer errors
+          // Flatten standard DRF serializer errors (e.g. { field: ["error message"] })
           const values = Object.values(data);
           if (values.length > 0) {
-            message = String(values[0]);
+            const first = values[0];
+            message = Array.isArray(first) ? String(first[0]) : String(first);
           }
+        }
+      } else if (typeof data === "string" && data.trim().length > 0 && !data.includes("<!DOCTYPE")) {
+        message = data.trim().slice(0, 150);
+      }
+
+      if (!message) {
+        switch (statusCode) {
+          case 400:
+            message = "Bad request. Please check your input.";
+            break;
+          case 401:
+            message = "Authentication credentials were not provided or have expired.";
+            break;
+          case 403:
+            message = "You do not have permission to access this resource.";
+            break;
+          case 404:
+            message = "The requested endpoint or resource was not found.";
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `HTTP request failed with status ${statusCode}.`;
         }
       }
     } else if (error.request) {
       message = "No response received from the server. Check your network connection.";
     } else if (error.message) {
       message = error.message;
+    } else {
+      message = "An unexpected error occurred.";
     }
+
     const responseData = error?.response?.data;
     const apiError = ApiError.fromResponse(statusCode, message, endpoint, responseData);
     logError(apiError, `httpClient:response [${endpoint}]`);
+
     // Handle session expiry / token invalidation
     if (statusCode === 401) {
-      const isLoginRequest = endpoint.includes("/login/");
+      const isLoginRequest = endpoint.includes("login");
       if (!isLoginRequest) {
         try {
           await useAuthStore.getState().logout();

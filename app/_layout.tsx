@@ -8,8 +8,26 @@ import { COLORS } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
 import { hasBusConductorAccess } from "@/utils/busAccess";
 
-// Suppress third-party SafeAreaView deprecation warnings
-LogBox.ignoreLogs(["SafeAreaView has been deprecated"]);
+// Suppress third-party deprecation warnings
+if (__DEV__) {
+  const ignoreWarns = [
+    "SafeAreaView has been deprecated",
+    "setLayoutAnimationEnabledExperimental is currently a no-op",
+  ];
+  LogBox.ignoreLogs(ignoreWarns);
+
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (
+      typeof args[0] === "string" &&
+      ignoreWarns.some((w) => args[0].includes(w))
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
+}
+
 
 const queryClient = new QueryClient();
 

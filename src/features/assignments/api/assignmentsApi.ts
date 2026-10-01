@@ -2,17 +2,17 @@ import httpClient from "@services/api/httpClient";
 
 export const assignmentsApi = {
   getAssignments: async () => {
-    const response = await httpClient.get("/assignments/");
+    const response = await httpClient.get("api/assignments/");
     return response.data;
   },
 
   getAssignmentDetails: async (id: number | string) => {
-    const response = await httpClient.get(`/assignments/${id}/`);
+    const response = await httpClient.get(`api/assignments/${id}/`);
     return response.data;
   },
 
   getSubmissions: async (assignmentId: number | string) => {
-    const response = await httpClient.get(`/assignments/${assignmentId}/submissions/`);
+    const response = await httpClient.get(`api/assignments/${assignmentId}/submissions/`);
     return response.data;
   },
 
@@ -33,7 +33,7 @@ export const assignmentsApi = {
       } as any);
     }
 
-    const response = await httpClient.post(`/assignments/${assignmentId}/submissions/`, formData, {
+    const response = await httpClient.post(`api/assignments/${assignmentId}/submissions/`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
@@ -10,15 +9,20 @@ import {
   Modal,
   FlatList,
   RefreshControl,
-  Image,
+  Platform,
+  StatusBar,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { COLORS } from "@/shared/theme/colors";
 import { useAuthStore } from "@store/authStore";
 import { hasBusConductorAccess } from "@/utils/busAccess";
 import { ROUTES } from "@/constants/route";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
+import { ParticularItemRow } from "../components/ParticularItemRow";
 
 type Lecture = {
   id: number;
@@ -42,6 +46,7 @@ type SessionStatus = {
     timestamp: string;
   }>;
   pending_requests_count: number;
+  code?: string;
 };
 
 type ManualRequest = {
@@ -57,7 +62,9 @@ export const LecturerDashboardScreen: React.FC = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const insets = useSafeAreaInsets();
 
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [loadingLectures, setLoadingLectures] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,6 +90,33 @@ export const LecturerDashboardScreen: React.FC = () => {
   const [deviceResets, setDeviceResets] = useState<any[]>([]);
   const [loadingDeviceResets, setLoadingDeviceResets] = useState(false);
   const [deviceResetsModalVisible, setDeviceResetsModalVisible] = useState(false);
+
+  const slideAnim = useRef(new Animated.Value(-120)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: showStickyHeader ? 0 : -120,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: showStickyHeader ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showStickyHeader]);
+
+  const handleScroll = (event: any) => {
+    const y = event.nativeEvent.contentOffset.y;
+    if (y > 60) {
+      setShowStickyHeader(true);
+    } else {
+      setShowStickyHeader(false);
+    }
+  };
 
   const isHodOrAdmin =
     user?.role === "Department Head" ||
@@ -112,15 +146,26 @@ export const LecturerDashboardScreen: React.FC = () => {
     }
   };
 
+  const getFormattedDate = () => {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const d = new Date();
+    return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
   // ── Fetch today's lectures and status ─────────────────────────────────
   const fetchLecturesData = useCallback(async () => {
     try {
       const list = await attendanceApi.getLectures();
       const rawLectures = Array.isArray(list) ? list : list.results || [];
 
-      // Filter for today's lectures that this user actually teaches — Admins
-      // get the whole college's timetable from /lectures/, and the per-lecture
-      // status/check-in endpoints are faculty-only (403 for anyone else).
       const todayDate = new Date();
       const todayLectures = rawLectures.filter((l: any) => {
         if (!l.start_time) return false;
@@ -135,7 +180,6 @@ export const LecturerDashboardScreen: React.FC = () => {
 
       setLectures(todayLectures);
 
-      // Fetch statuses in parallel for all lectures
       const statusPromises = todayLectures.map(async (lec: Lecture) => {
         try {
           const statusRes = await attendanceApi.getLecturerAttendanceStatus(lec.id);
@@ -154,7 +198,6 @@ export const LecturerDashboardScreen: React.FC = () => {
       });
       setSessionStatuses(nextStatuses);
 
-      // Fetch pending biometric device resets for HODs / Admins
       if (isHodOrAdmin) {
         try {
           const resets = await attendanceApi.getLecturerDeviceResetRequests();
@@ -226,7 +269,7 @@ export const LecturerDashboardScreen: React.FC = () => {
               ...prev,
               [id]: {
                 ...nextStatus,
-                seconds_remaining: prev[id].seconds_remaining, // preserve local countdown
+                seconds_remaining: prev[id].seconds_remaining,
               },
             };
           });
@@ -248,14 +291,12 @@ export const LecturerDashboardScreen: React.FC = () => {
   const handleCheckIn = async (lectureId: number) => {
     setActionLoading((prev) => ({ ...prev, [lectureId]: true }));
     try {
-      // 1. Request location permissions
       const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
       if (permStatus !== "granted") {
         Alert.alert("Location Denied", "Classroom check-in requires GPS location access.");
         return;
       }
 
-      // 2. Fetch current GPS location
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -263,11 +304,9 @@ export const LecturerDashboardScreen: React.FC = () => {
       const lat = loc.coords.latitude;
       const lon = loc.coords.longitude;
 
-      // 3. Post check-in to server
       const res = await attendanceApi.lecturerCheckIn(lectureId, lat, lon);
       Alert.alert("📍 Checked In", res.message || "Classroom geofence registered at your location.");
 
-      // Refresh status
       const nextStatus = await attendanceApi.getLecturerAttendanceStatus(lectureId);
       setSessionStatuses((prev) => ({ ...prev, [lectureId]: nextStatus }));
     } catch (err: any) {
@@ -285,7 +324,6 @@ export const LecturerDashboardScreen: React.FC = () => {
       const res = await attendanceApi.lecturerStartAttendance(lectureId);
       Alert.alert("⏰ Period Started", res.message || "Attendance period is open for 3 minutes.");
 
-      // Refresh status
       const nextStatus = await attendanceApi.getLecturerAttendanceStatus(lectureId);
       setSessionStatuses((prev) => ({ ...prev, [lectureId]: nextStatus }));
     } catch (err: any) {
@@ -301,7 +339,7 @@ export const LecturerDashboardScreen: React.FC = () => {
     setActiveLecture(lecture);
     setLoadingRequests(true);
     setRequestsModalVisible(true);
-    setSelectedIds([]); // Reset selection
+    setSelectedIds([]);
 
     try {
       const data = await attendanceApi.getLecturerManualRequests(lecture.id);
@@ -319,11 +357,9 @@ export const LecturerDashboardScreen: React.FC = () => {
       const res = await attendanceApi.lecturerApproveManualRequest(requestId, action);
       Alert.alert("Success", res.message || `Request ${action}d.`);
 
-      // Update local modal list
       setManualRequests((prev) => prev.filter((r) => r.id !== requestId));
       setSelectedIds((prev) => prev.filter((id) => id !== requestId));
 
-      // Refresh lecture status dynamically on dashboard
       if (activeLecture) {
         const nextStatus = await attendanceApi.getLecturerAttendanceStatus(activeLecture.id);
         setSessionStatuses((prev) => ({ ...prev, [activeLecture.id]: nextStatus }));
@@ -346,13 +382,11 @@ export const LecturerDashboardScreen: React.FC = () => {
     setBulkActionLoading(true);
     try {
       const res = await attendanceApi.lecturerBulkApproveManualRequests(selectedIds, action);
-      Alert.alert("Bulk Success", res.message || `Processed {selectedIds.length} requests.`);
+      Alert.alert("Bulk Success", res.message || `Processed ${selectedIds.length} requests.`);
 
-      // Filter out completed requests from modal list
       setManualRequests((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);
 
-      // Refresh dynamic status
       if (activeLecture) {
         const nextStatus = await attendanceApi.getLecturerAttendanceStatus(activeLecture.id);
         setSessionStatuses((prev) => ({ ...prev, [activeLecture.id]: nextStatus }));
@@ -382,7 +416,6 @@ export const LecturerDashboardScreen: React.FC = () => {
       const res = await attendanceApi.lecturerApproveDeviceResetRequest(requestId, action);
       Alert.alert("Success", res.message || `Reset request ${action}d.`);
 
-      // Update local modal list
       setDeviceResets((prev) => prev.filter((r) => r.id !== requestId));
     } catch (err: any) {
       Alert.alert("Review Failed", err.message || err.data?.error || "Failed to process reset approval.");
@@ -411,337 +444,386 @@ export const LecturerDashboardScreen: React.FC = () => {
     return `${mins}m ${remainingSecs.toString().padStart(2, "0")}s`;
   };
 
+  // Quick Access particulars items array
+  const particularsItems = [
+    {
+      id: "report",
+      title: "Conducted Lectures Report",
+      subtitle: "View history and filter classes by Date",
+      iconName: "bar-chart-2" as const,
+      onPress: () => router.push(ROUTES.APP.LECTURER_HISTORY),
+      highlightSubtitle: false,
+    },
+    {
+      id: "leave",
+      title: "Leave Management",
+      subtitle: "Apply for leave and check your balance",
+      iconName: "calendar" as const,
+      onPress: () => router.push(ROUTES.APP.LEAVE),
+      highlightSubtitle: false,
+    },
+    {
+      id: "payslips",
+      title: "Payslips",
+      subtitle: "Monthly salary and deductions",
+      iconName: "dollar-sign" as const,
+      onPress: () => router.push(ROUTES.APP.PAYSLIPS),
+      highlightSubtitle: false,
+    },
+    {
+      id: "notifications",
+      title: "Notifications",
+      subtitle: "Correction reviews, approvals and alerts",
+      iconName: "bell" as const,
+      onPress: () => router.push(ROUTES.APP.NOTIFICATIONS),
+      highlightSubtitle: false,
+    },
+    ...(isHodOrAdmin
+      ? [
+          {
+            id: "deviceResets",
+            title: "Biometric Reset Tickets",
+            subtitle:
+              deviceResets.length > 0
+                ? `${deviceResets.length} pending student reset requests`
+                : "No pending reset requests",
+            iconName: "shield" as const,
+            onPress: handleOpenDeviceResets,
+            highlightSubtitle: deviceResets.length > 0,
+          },
+        ]
+      : []),
+    ...(hasBusConductorAccess(user)
+      ? [
+          {
+            id: "busConductor",
+            title: "Bus Route Conductor Panel",
+            subtitle: "Start live GPS stream and track stop passenger tallies",
+            iconName: "truck" as const,
+            onPress: () => router.push(ROUTES.APP.BUS_TRACKING),
+            highlightSubtitle: true,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-[#F8FAFC]">
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
+      {/* Sticky Animated Header */}
+      <Animated.View
+        pointerEvents={showStickyHeader ? "auto" : "none"}
+        style={{
+          paddingTop: insets.top + 12,
+          transform: [{ translateY: slideAnim }],
+          opacity: opacityAnim,
+        }}
+        className="absolute top-0 left-0 right-0 bg-white/95 border-b border-slate-100 flex-row justify-between items-center px-6 pb-3.5 z-50 shadow-sm"
+      >
+        <Text className="text-[16px] font-extrabold text-slate-800" numberOfLines={1}>
+          {user?.username || "Lecturer"}
+        </Text>
+        <View className="flex-row items-center">
+          <Feather name="calendar" size={14} color="#5D1E62" className="mr-1.5" />
+          <Text className="text-xs font-bold text-[#5D1E62] uppercase tracking-wider">{getFormattedDate()}</Text>
+        </View>
+      </Animated.View>
+
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: Platform.OS === "ios" ? insets.top + 16 : insets.top + 20,
+          paddingBottom: 40,
+        }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5D1E62" />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <View style={styles.roleRow}>
-              <Text style={styles.userName}>{user?.username || "Lecturer"}</Text>
-              <View style={styles.facultyBadge}>
-                <Text style={styles.facultyBadgeText}>FACULTY</Text>
-              </View>
+        {/* Header Section */}
+        <View className="flex-row justify-between items-center mb-6">
+          <View className="flex-1 mr-4">
+            <Text className="text-slate-400 text-[13px] font-semibold">Welcome back,</Text>
+            <Text className="text-slate-800 text-[22px] font-black mt-0.5" numberOfLines={1}>
+              {user?.username || "Lecturer"}
+            </Text>
+            <View className="self-start bg-[#5D1E62] px-2.5 py-0.5 rounded-md mt-1.5">
+              <Text className="text-white text-[9px] font-black tracking-widest uppercase">FACULTY</Text>
             </View>
           </View>
+
           <TouchableOpacity
-            style={styles.profileAvatar}
             onPress={() => router.push(ROUTES.APP.PROFILE)}
             activeOpacity={0.7}
+            className="w-12 h-12 bg-white border-2 border-slate-100 rounded-full justify-center items-center shadow-sm"
           >
-            <Text style={styles.profileAvatarText}>{userInitials}</Text>
+            <Text className="text-[#5D1E62] font-black text-base">{userInitials}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Report Link Card */}
-        <TouchableOpacity
-          style={styles.historyCardLink}
-          onPress={() => router.push(ROUTES.APP.LECTURER_HISTORY)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.historyCardContent}>
-            <Text style={styles.historyCardEmoji}>📊</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.historyCardTitle}>Conducted Lectures Report</Text>
-              <Text style={styles.historyCardSubtitle}>View history and filter classes by Date</Text>
+        {/* Quick Access Section - Unified Particulars Container */}
+        <View className="mb-6">
+          <Text className="text-[18px] font-black text-slate-800 tracking-tight mb-3">Quick Access</Text>
+          <View className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            {particularsItems.map((item, index) => (
+              <ParticularItemRow
+                key={item.id}
+                iconName={item.iconName}
+                title={item.title}
+                subtitle={item.subtitle}
+                onPress={item.onPress}
+                isLast={index === particularsItems.length - 1}
+                highlightSubtitle={item.highlightSubtitle}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Today's Lectures Section */}
+        <View className="mb-6">
+          <View className="flex-row justify-between items-center mb-3 p-2">
+            <Text className="text-[18px] font-black text-slate-800 tracking-tight">Today's Lectures</Text>
+            <View className="bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md">
+              <Text className="text-[#5D1E62] text-[11px] font-bold">
+                {lectures.length} scheduled
+              </Text>
             </View>
           </View>
-          <Text style={styles.historyCardArrow}>❯</Text>
-        </TouchableOpacity>
 
-        {/* Leave Management Link Card */}
-        <TouchableOpacity
-          style={styles.historyCardLink}
-          onPress={() => router.push(ROUTES.APP.LEAVE)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.historyCardContent}>
-            <Text style={styles.historyCardEmoji}>🗓️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.historyCardTitle}>Leave Management</Text>
-              <Text style={styles.historyCardSubtitle}>Apply for leave and check your balance</Text>
-            </View>
-          </View>
-          <Text style={styles.historyCardArrow}>❯</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.historyCardLink}
-          onPress={() => router.push(ROUTES.APP.PAYSLIPS)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.historyCardContent}>
-            <Text style={styles.historyCardEmoji}>💰</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.historyCardTitle}>Payslips</Text>
-              <Text style={styles.historyCardSubtitle}>Monthly salary and deductions</Text>
-            </View>
-          </View>
-          <Text style={styles.historyCardArrow}>❯</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.historyCardLink}
-          onPress={() => router.push(ROUTES.APP.NOTIFICATIONS)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.historyCardContent}>
-            <Text style={styles.historyCardEmoji}>🔔</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.historyCardTitle}>Notifications</Text>
-              <Text style={styles.historyCardSubtitle}>Correction reviews, approvals and alerts</Text>
-            </View>
-          </View>
-          <Text style={styles.historyCardArrow}>❯</Text>
-        </TouchableOpacity>
-
-        {/* HOD Biometric Reset Portal Card Link */}
-        {isHodOrAdmin && (
-          <TouchableOpacity
-            style={[styles.historyCardLink, { backgroundColor: "#8B5CF6", marginTop: -12 }]}
-            onPress={handleOpenDeviceResets}
-            activeOpacity={0.7}
-          >
-            <View style={styles.historyCardContent}>
-              <Text style={styles.historyCardEmoji}>🔒</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.historyCardTitle}>Biometric Reset Tickets</Text>
-                <Text style={styles.historyCardSubtitle}>
-                  {deviceResets.length > 0
-                    ? `${deviceResets.length} pending student reset requests`
-                    : "No pending reset requests"}
-                </Text>
+          {loadingLectures ? (
+            <ActivityIndicator size="large" color="#5D1E62" className="my-8" />
+          ) : lectures.length === 0 ? (
+            <View className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm items-center justify-center">
+              <View className="w-12 h-12 bg-purple-50 rounded-lg justify-center items-center mb-3">
+                <Feather name="calendar" size={22} color="#5D1E62" />
               </View>
+              <Text className="text-slate-800 font-bold text-sm">No lectures scheduled for today</Text>
+              <Text className="text-slate-400 text-xs mt-1">Enjoy your free time!</Text>
             </View>
-            <Text style={styles.historyCardArrow}>❯</Text>
-          </TouchableOpacity>
-        )}
+          ) : (
+            <View className="gap-4">
+              {lectures.map((lec) => {
+                const statusItem = sessionStatuses[lec.id] || {
+                  is_checked_in: false,
+                  session_active: false,
+                  seconds_remaining: 0,
+                  marked_students_count: 0,
+                  marked_students: [],
+                  pending_requests_count: 0,
+                };
 
-        {/* Conductor Bus Tracking Card Link — only for Faculty actually
-            holding the bus driver/conductor additional charge */}
-        {hasBusConductorAccess(user) && (
-          <TouchableOpacity
-            style={[styles.historyCardLink, { backgroundColor: "#EAB308", marginTop: -12 }]}
-            onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.historyCardContent}>
-              <Text style={styles.historyCardEmoji}>🚌</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.historyCardTitle}>Bus Route Conductor Panel</Text>
-                <Text style={styles.historyCardSubtitle}>Start live GPS stream and track stop passenger tallies</Text>
-              </View>
-            </View>
-            <Text style={styles.historyCardArrow}>❯</Text>
-          </TouchableOpacity>
-        )}
+                const isLoading = actionLoading[lec.id] || false;
 
-        {/* Section title */}
-        <Text style={styles.sectionTitle}>Today's Lectures</Text>
-
-        {/* Loading lectures */}
-        {loadingLectures && (
-          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
-        )}
-
-        {/* Lectures List */}
-        {!loadingLectures && lectures.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📅</Text>
-            <Text style={styles.emptyText}>No lectures scheduled for today.</Text>
-          </View>
-        )}
-
-        {!loadingLectures &&
-          lectures.map((lec) => {
-            const statusItem = sessionStatuses[lec.id] || {
-              is_checked_in: false,
-              session_active: false,
-              seconds_remaining: 0,
-              marked_students_count: 0,
-              marked_students: [],
-              pending_requests_count: 0,
-            };
-
-            const isLoading = actionLoading[lec.id] || false;
-
-            return (
-              <View key={lec.id} style={styles.lectureCard}>
-                <View style={styles.lectureHeader}>
-                  <Text style={styles.lectureSubject}>{lec.subject || "Lecture Code"}</Text>
-                  <Text style={styles.lectureTime}>
-                    {formatTimeStr(lec.start_time)} - {formatTimeStr(lec.end_time)}
-                  </Text>
-                </View>
-                <Text style={styles.lectureName}>{lec.name}</Text>
-                <Text style={styles.classroomText}>📍 Room: {lec.classroom_name || "Classroom"}</Text>
-
-                <View style={styles.divider} />
-
-                {/* Status Badges */}
-                <View style={styles.badgesRow}>
-                  {statusItem.is_checked_in ? (
-                    <View style={[styles.statusBadge, styles.successBadge]}>
-                      <Text style={styles.successBadgeText}>✓ Checked In</Text>
+                return (
+                  <View key={lec.id} className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+                    {/* Lecture Header */}
+                    <View className="flex-row justify-between items-start mb-2">
+                      <View className="bg-purple-50 border border-purple-100 px-3 py-1 rounded-md">
+                        <Text className="text-[#5D1E62] font-black text-xs">{lec.subject || "Subject"}</Text>
+                      </View>
+                      <View className="flex-row items-center bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                        <Feather name="clock" size={12} color="#64748b" className="mr-1" />
+                        <Text className="text-slate-600 text-xs font-bold">
+                          {formatTimeStr(lec.start_time)} - {formatTimeStr(lec.end_time)}
+                        </Text>
+                      </View>
                     </View>
-                  ) : (
-                    <View style={[styles.statusBadge, styles.pendingBadge]}>
-                      <Text style={styles.pendingBadgeText}>Not Checked In</Text>
-                    </View>
-                  )}
 
-                  {statusItem.session_active && (
-                    <View style={[styles.statusBadge, styles.activeSessionBadge]}>
-                      <Text style={styles.activeSessionText}>
-                        🔴 Verify Window Open: {formatTimer(statusItem.seconds_remaining)}
+                    {/* Lecture Title & Room */}
+                    <Text className="text-slate-800 font-extrabold text-[16px] mb-1">{lec.name}</Text>
+                    <View className="flex-row items-center mb-3">
+                      <Feather name="map-pin" size={13} color="#94a3b8" className="mr-1" />
+                      <Text className="text-slate-400 text-xs font-semibold">
+                        Room: {lec.classroom_name || "Classroom"}
                       </Text>
                     </View>
-                  )}
-                </View>
 
-                {/* Dashboard Controls */}
-                <View style={styles.controlsRow}>
-                  {/* Step 1: Check In */}
-                  {!statusItem.is_checked_in && (
-                    <TouchableOpacity
-                      style={[styles.primaryBtn, isLoading && styles.btnDisabled]}
-                      onPress={() => handleCheckIn(lec.id)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <ActivityIndicator size="small" color="#FFF" />
+                    <View className="h-[1px] bg-slate-100 my-3" />
+
+                    {/* Status Badges */}
+                    <View className="flex-row flex-wrap gap-2 mb-4">
+                      {statusItem.is_checked_in ? (
+                        <View className="bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md flex-row items-center">
+                          <Feather name="check-circle" size={12} color="#059669" className="mr-1.5" />
+                          <Text className="text-emerald-700 text-xs font-bold">Checked In</Text>
+                        </View>
                       ) : (
-                        <Text style={styles.btnText}>📍 Room Check-In</Text>
+                        <View className="bg-amber-50 border border-amber-200 px-3 py-1 rounded-md flex-row items-center">
+                          <Feather name="alert-circle" size={12} color="#d97706" className="mr-1.5" />
+                          <Text className="text-amber-700 text-xs font-bold">Not Checked In</Text>
+                        </View>
                       )}
-                    </TouchableOpacity>
-                  )}
 
-                  {/* Step 2: Start Attendance Session */}
-                  {statusItem.is_checked_in && !statusItem.session_active && statusItem.seconds_remaining === 0 && (
-                    <TouchableOpacity
-                      style={[styles.startPeriodBtn, isLoading && styles.btnDisabled]}
-                      onPress={() => handleStartAttendance(lec.id)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <ActivityIndicator size="small" color="#FFF" />
-                      ) : (
-                        <Text style={styles.btnText}>🚀 Start Attendance Window (3m)</Text>
+                      {statusItem.session_active && (
+                        <View className="bg-rose-50 border border-rose-200 px-3 py-1 rounded-md flex-row items-center">
+                          <View className="w-2 h-2 rounded-full bg-rose-500 mr-1.5" />
+                          <Text className="text-rose-700 text-xs font-extrabold">
+                            Window Open: {formatTimer(statusItem.seconds_remaining)}
+                          </Text>
+                        </View>
                       )}
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Step 3: Show Lecture Code to students */}
-                  {statusItem.is_checked_in && statusItem.session_active && (
-                    <View style={[styles.primaryBtn, { backgroundColor: "#1D4ED8", flexDirection: "row", gap: 6 }]}>
-                      <Text style={styles.btnText}>🔑 Code: {statusItem.code || "..."}</Text>
                     </View>
-                  )}
-                </View>
 
-                {/* Live Stats panel (only when checked in) */}
-                {statusItem.is_checked_in && (
-                  <View style={styles.statsPanel}>
-                    <TouchableOpacity
-                      style={styles.statsRow}
-                      onPress={() => {
-                        setActiveLecture(lec);
-                        setStudentsModalVisible(true);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.statsLabel}>Verified Students:</Text>
-                      <Text style={styles.statsValue}>{statusItem.marked_students_count} present ❯</Text>
-                    </TouchableOpacity>
+                    {/* Dashboard Controls */}
+                    <View className="mb-3">
+                      {!statusItem.is_checked_in && (
+                        <TouchableOpacity
+                          onPress={() => handleCheckIn(lec.id)}
+                          disabled={isLoading}
+                          activeOpacity={0.8}
+                          className="bg-[#5D1E62] py-3 px-4 rounded-xl flex-row items-center justify-center shadow-sm"
+                        >
+                          {isLoading ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                          ) : (
+                            <>
+                              <Feather name="map-pin" size={15} color="#FFF" className="mr-2" />
+                              <Text className="text-white font-extrabold text-xs">Room Check-In</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      )}
 
-                    {/* Pending Manual Approval Requests */}
-                    {statusItem.pending_requests_count > 0 ? (
-                      <TouchableOpacity
-                        style={[styles.requestsRow, styles.requestsAlertBorder]}
-                        onPress={() => handleOpenRequests(lec)}
-                      >
-                        <Text style={styles.requestsAlertText}>
-                          ⚠️ {statusItem.pending_requests_count} manual requests pending
-                        </Text>
-                        <Text style={styles.requestsAlertLink}>Review ❯</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={styles.requestsRowMuted}>
-                        <Text style={styles.requestsMutedText}>No pending manual override requests</Text>
+                      {statusItem.is_checked_in && !statusItem.session_active && statusItem.seconds_remaining === 0 && (
+                        <TouchableOpacity
+                          onPress={() => handleStartAttendance(lec.id)}
+                          disabled={isLoading}
+                          activeOpacity={0.8}
+                          className="bg-emerald-600 py-3 px-4 rounded-xl flex-row items-center justify-center shadow-sm"
+                        >
+                          {isLoading ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                          ) : (
+                            <>
+                              <Feather name="play-circle" size={15} color="#FFF" className="mr-2" />
+                              <Text className="text-white font-extrabold text-xs">Start Attendance Window (3m)</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      )}
+
+                      {statusItem.is_checked_in && statusItem.session_active && (
+                        <View className="bg-blue-600 py-3 px-4 rounded-xl flex-row items-center justify-center shadow-sm">
+                          <Feather name="key" size={15} color="#FFF" className="mr-2" />
+                          <Text className="text-white font-black text-xs tracking-wider">
+                            Code: {statusItem.code || "..."}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Live Stats panel (only when checked in) */}
+                    {statusItem.is_checked_in && (
+                      <View className="bg-slate-50 border border-slate-100 rounded-xl p-3 gap-2">
+                        <TouchableOpacity
+                          onPress={() => {
+                            setActiveLecture(lec);
+                            setStudentsModalVisible(true);
+                          }}
+                          activeOpacity={0.7}
+                          className="flex-row items-center justify-between py-1"
+                        >
+                          <Text className="text-slate-600 font-bold text-xs">Verified Students</Text>
+                          <View className="flex-row items-center">
+                            <Text className="text-[#5D1E62] font-black text-xs mr-1">
+                              {statusItem.marked_students_count} present
+                            </Text>
+                            <Feather name="chevron-right" size={14} color="#5D1E62" />
+                          </View>
+                        </TouchableOpacity>
+
+                        {statusItem.pending_requests_count > 0 ? (
+                          <TouchableOpacity
+                            onPress={() => handleOpenRequests(lec)}
+                            activeOpacity={0.8}
+                            className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex-row items-center justify-between mt-1"
+                          >
+                            <View className="flex-row items-center flex-1 mr-2">
+                              <Feather name="alert-triangle" size={14} color="#d97706" className="mr-2" />
+                              <Text className="text-amber-800 font-bold text-xs" numberOfLines={1}>
+                                {statusItem.pending_requests_count} manual requests pending
+                              </Text>
+                            </View>
+                            <Text className="text-amber-900 font-extrabold text-xs">Review ❯</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Text className="text-slate-400 font-semibold text-[11px] text-center mt-1">
+                            No pending manual override requests
+                          </Text>
+                        )}
                       </View>
                     )}
                   </View>
-                )}
-              </View>
-            );
-          })}
+                );
+              })}
+            </View>
+          )}
+        </View>
 
-        {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutRow} onPress={handleLogout}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* MODAL 1: Manual Attendance Requests Review */}
       <Modal visible={requestsModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl max-h-[85%] min-h-[50%] px-6 pt-5 pb-8">
+            <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-100">
               <View>
-                <Text style={styles.modalTitle}>Manual Override Requests</Text>
+                <Text className="text-[17px] font-extrabold text-slate-800">Manual Override Requests</Text>
                 {manualRequests.length > 0 && (
-                  <TouchableOpacity onPress={toggleSelectAll} style={styles.selectAllBtn} activeOpacity={0.7}>
-                    <Text style={styles.selectAllBtnText}>
+                  <TouchableOpacity onPress={toggleSelectAll} activeOpacity={0.7} className="mt-1">
+                    <Text className="text-[#5D1E62] text-xs font-bold">
                       {selectedIds.length === manualRequests.length ? "Deselect All" : "Select All"}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
-              <TouchableOpacity onPress={() => setRequestsModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Close</Text>
+              <TouchableOpacity
+                onPress={() => setRequestsModalVisible(false)}
+                className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"
+              >
+                <Text className="text-slate-600 text-xs font-bold">Close</Text>
               </TouchableOpacity>
             </View>
 
             {loadingRequests ? (
-              <ActivityIndicator size="large" color={COLORS.primary} style={{ marginVertical: 32 }} />
+              <ActivityIndicator size="large" color="#5D1E62" className="my-8" />
             ) : manualRequests.length === 0 ? (
-              <View style={styles.emptyModalState}>
-                <Text style={styles.emptyModalText}>All requests resolved. No tickets pending! 🎉</Text>
+              <View className="py-12 items-center justify-center">
+                <Text className="text-slate-500 font-bold text-sm text-center">
+                  All requests resolved. No tickets pending! 🎉
+                </Text>
               </View>
             ) : (
               <>
                 {selectedIds.length > 0 && (
-                  <View style={styles.bulkActionBar}>
-                    <Text style={styles.bulkActionTitle}>
+                  <View className="bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4">
+                    <Text className="text-[#5D1E62] text-xs font-extrabold text-center mb-2">
                       Bulk Action ({selectedIds.length} selected)
                     </Text>
-                    <View style={styles.bulkButtonsRow}>
+                    <View className="flex-row gap-3">
                       <TouchableOpacity
-                        style={[styles.bulkActionBtn, styles.bulkApproveBtn, bulkActionLoading && styles.btnDisabled]}
                         onPress={() => handleBulkReview("approve")}
                         disabled={bulkActionLoading}
+                        className="flex-1 bg-emerald-600 py-2 rounded-lg items-center justify-center"
                       >
                         {bulkActionLoading ? (
                           <ActivityIndicator size="small" color="#FFF" />
                         ) : (
-                          <Text style={styles.actionBtnText}>Approve Selected ✓</Text>
+                          <Text className="text-white text-xs font-extrabold">Approve Selected ✓</Text>
                         )}
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.bulkActionBtn, styles.bulkRejectBtn, bulkActionLoading && styles.btnDisabled]}
                         onPress={() => handleBulkReview("reject")}
                         disabled={bulkActionLoading}
+                        className="flex-1 bg-rose-600 py-2 rounded-lg items-center justify-center"
                       >
                         {bulkActionLoading ? (
                           <ActivityIndicator size="small" color="#FFF" />
                         ) : (
-                          <Text style={styles.actionBtnText}>Reject Selected ✕</Text>
+                          <Text className="text-white text-xs font-extrabold">Reject Selected ✕</Text>
                         )}
                       </TouchableOpacity>
                     </View>
@@ -752,13 +834,9 @@ export const LecturerDashboardScreen: React.FC = () => {
                   data={manualRequests}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => (
-                    <View style={styles.requestCard}>
-                      <View style={styles.requestCardRow}>
+                    <View className="bg-white rounded-xl p-4 mb-3 border border-slate-100 shadow-sm">
+                      <View className="flex-row items-center mb-2">
                         <TouchableOpacity
-                          style={[
-                            styles.checkbox,
-                            selectedIds.includes(item.id) && styles.checkboxChecked
-                          ]}
                           onPress={() => {
                             setSelectedIds((prev) =>
                               prev.includes(item.id)
@@ -767,33 +845,38 @@ export const LecturerDashboardScreen: React.FC = () => {
                             );
                           }}
                           activeOpacity={0.7}
+                          className={`w-5 h-5 rounded border-2 justify-center items-center mr-3 ${
+                            selectedIds.includes(item.id)
+                              ? "bg-[#5D1E62] border-[#5D1E62]"
+                              : "border-slate-300"
+                          }`}
                         >
                           {selectedIds.includes(item.id) && (
-                            <Text style={styles.checkboxTick}>✓</Text>
+                            <Feather name="check" size={12} color="#FFF" />
                           )}
                         </TouchableOpacity>
 
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.requestCardHeader}>
-                            <Text style={styles.requestStudentName}>{item.full_name}</Text>
-                            <Text style={styles.requestStudentId}>{item.student_id}</Text>
+                        <View className="flex-1">
+                          <View className="flex-row justify-between items-center">
+                            <Text className="text-slate-800 font-extrabold text-sm">{item.full_name}</Text>
+                            <Text className="text-[#5D1E62] font-bold text-xs">{item.student_id}</Text>
                           </View>
-                          <Text style={styles.requestReason}>Reason: "{item.reason}"</Text>
+                          <Text className="text-slate-500 text-xs italic mt-1">Reason: "{item.reason}"</Text>
                         </View>
                       </View>
 
-                      <View style={styles.requestActionsRow}>
+                      <View className="flex-row gap-3 mt-2">
                         <TouchableOpacity
-                          style={[styles.actionBtn, styles.approveBtn]}
                           onPress={() => handleReviewRequest(item.id, "approve")}
+                          className="flex-1 bg-emerald-600 py-2 rounded-lg items-center justify-center"
                         >
-                          <Text style={styles.actionBtnText}>Approve ✓</Text>
+                          <Text className="text-white text-xs font-extrabold">Approve ✓</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          style={[styles.actionBtn, styles.rejectBtn]}
                           onPress={() => handleReviewRequest(item.id, "reject")}
+                          className="flex-1 bg-rose-600 py-2 rounded-lg items-center justify-center"
                         >
-                          <Text style={styles.actionBtnText}>Reject ✕</Text>
+                          <Text className="text-white text-xs font-extrabold">Reject ✕</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -807,12 +890,15 @@ export const LecturerDashboardScreen: React.FC = () => {
 
       {/* MODAL 2: List Checked In Students */}
       <Modal visible={studentsModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Verified Attendance List</Text>
-              <TouchableOpacity onPress={() => setStudentsModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Close</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl max-h-[85%] min-h-[50%] px-6 pt-5 pb-8">
+            <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <Text className="text-[17px] font-extrabold text-slate-800">Verified Attendance List</Text>
+              <TouchableOpacity
+                onPress={() => setStudentsModalVisible(false)}
+                className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"
+              >
+                <Text className="text-slate-600 text-xs font-bold">Close</Text>
               </TouchableOpacity>
             </View>
 
@@ -821,17 +907,17 @@ export const LecturerDashboardScreen: React.FC = () => {
                 data={sessionStatuses[activeLecture.id]?.marked_students || []}
                 keyExtractor={(item) => item.student_id}
                 ListEmptyComponent={
-                  <View style={styles.emptyModalState}>
-                    <Text style={styles.emptyModalText}>No students checked in yet.</Text>
+                  <View className="py-12 items-center justify-center">
+                    <Text className="text-slate-400 font-semibold text-sm">No students checked in yet.</Text>
                   </View>
                 }
                 renderItem={({ item }) => (
-                  <View style={styles.studentCard}>
+                  <View className="flex-row justify-between items-center bg-slate-50 p-3.5 rounded-xl mb-2 border border-slate-100">
                     <View>
-                      <Text style={styles.studentName}>{item.full_name}</Text>
-                      <Text style={styles.studentId}>{item.student_id}</Text>
+                      <Text className="text-slate-800 font-bold text-sm">{item.full_name}</Text>
+                      <Text className="text-slate-400 text-xs mt-0.5">{item.student_id}</Text>
                     </View>
-                    <Text style={styles.checkinTime}>
+                    <Text className="text-emerald-600 text-xs font-bold">
                       {new Date(item.timestamp).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -847,48 +933,54 @@ export const LecturerDashboardScreen: React.FC = () => {
 
       {/* MODAL 3: Biometric Device Reset Requests (HOD Console) */}
       <Modal visible={deviceResetsModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalBg}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Biometric Reset Tickets</Text>
-              <TouchableOpacity onPress={() => setDeviceResetsModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Close</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl max-h-[85%] min-h-[50%] px-6 pt-5 pb-8">
+            <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <Text className="text-[17px] font-extrabold text-slate-800">Biometric Reset Tickets</Text>
+              <TouchableOpacity
+                onPress={() => setDeviceResetsModalVisible(false)}
+                className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"
+              >
+                <Text className="text-slate-600 text-xs font-bold">Close</Text>
               </TouchableOpacity>
             </View>
 
             {loadingDeviceResets ? (
-              <ActivityIndicator size="large" color={COLORS.primary} style={{ marginVertical: 32 }} />
+              <ActivityIndicator size="large" color="#5D1E62" className="my-8" />
             ) : deviceResets.length === 0 ? (
-              <View style={styles.emptyModalState}>
-                <Text style={styles.emptyModalText}>No biometric reset requests pending review.</Text>
+              <View className="py-12 items-center justify-center">
+                <Text className="text-slate-400 font-semibold text-sm text-center">
+                  No biometric reset requests pending review.
+                </Text>
               </View>
             ) : (
               <FlatList
                 data={deviceResets}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <View style={styles.requestCard}>
-                    <View style={styles.requestCardHeader}>
-                      <Text style={styles.requestStudentName}>{item.full_name}</Text>
-                      <Text style={styles.requestStudentId}>{item.student_id}</Text>
+                  <View className="bg-white rounded-xl p-4 mb-3 border border-slate-100 shadow-sm">
+                    <View className="flex-row justify-between items-center mb-1">
+                      <Text className="text-slate-800 font-extrabold text-sm">{item.full_name}</Text>
+                      <Text className="text-[#5D1E62] font-bold text-xs">{item.student_id}</Text>
                     </View>
-                    <Text style={styles.requestReason}>Reason: "{item.reason}"</Text>
-                    <Text style={styles.requestedAtText}>
-                      Requested: {new Date(item.requested_at).toLocaleDateString()} at {new Date(item.requested_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <Text className="text-slate-500 text-xs italic mb-1">Reason: "{item.reason}"</Text>
+                    <Text className="text-slate-400 text-[11px] mb-3">
+                      Requested: {new Date(item.requested_at).toLocaleDateString()} at{" "}
+                      {new Date(item.requested_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </Text>
 
-                    <View style={styles.requestActionsRow}>
+                    <View className="flex-row gap-3">
                       <TouchableOpacity
-                        style={[styles.actionBtn, styles.approveBtn]}
                         onPress={() => handleReviewDeviceReset(item.id, "approve")}
+                        className="flex-1 bg-emerald-600 py-2 rounded-lg items-center justify-center"
                       >
-                        <Text style={styles.actionBtnText}>Approve Reset ✓</Text>
+                        <Text className="text-white text-xs font-extrabold">Approve Reset ✓</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.actionBtn, styles.rejectBtn]}
                         onPress={() => handleReviewDeviceReset(item.id, "reject")}
+                        className="flex-1 bg-rose-600 py-2 rounded-lg items-center justify-center"
                       >
-                        <Text style={styles.actionBtnText}>Reject ✕</Text>
+                        <Text className="text-white text-xs font-extrabold">Reject ✕</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -898,579 +990,8 @@ export const LecturerDashboardScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  roleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  facultyBadge: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  facultyBadgeText: {
-    color: COLORS.white,
-    fontSize: 9,
-    fontWeight: "900",
-  },
-  profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileAvatarText: {
-    color: COLORS.primary,
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  lectureCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  lectureHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  lectureSubject: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
-    backgroundColor: "rgba(74, 21, 75, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  lectureTime: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-  },
-  lectureName: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 6,
-  },
-  classroomText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 14,
-  },
-  badgesRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 14,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  successBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-    borderColor: "rgba(16, 185, 129, 0.3)",
-  },
-  successBadgeText: {
-    color: COLORS.success,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  pendingBadge: {
-    backgroundColor: "rgba(245, 158, 11, 0.08)",
-    borderColor: "rgba(245, 158, 11, 0.25)",
-  },
-  pendingBadgeText: {
-    color: COLORS.warning,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  activeSessionBadge: {
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
-  },
-  activeSessionText: {
-    color: COLORS.error,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  controlsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  primaryBtn: {
-    flex: 1,
-    height: 42,
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  startPeriodBtn: {
-    flex: 1,
-    height: 42,
-    backgroundColor: "#16A34A", // Premium green accent
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnDisabled: {
-    opacity: 0.55,
-  },
-  btnText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  statsPanel: {
-    marginTop: 14,
-    backgroundColor: "rgba(148, 163, 184, 0.05)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: "hidden",
-  },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  statsLabel: {
-    fontSize: 13,
-    color: COLORS.text,
-    fontWeight: "600",
-  },
-  statsValue: {
-    fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: "800",
-  },
-  requestsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    alignItems: "center",
-  },
-  requestsAlertBorder: {
-    backgroundColor: "rgba(245, 158, 11, 0.05)",
-  },
-  requestsAlertText: {
-    color: COLORS.warning,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  requestsAlertLink: {
-    color: COLORS.warning,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  requestsRowMuted: {
-    padding: 12,
-    alignItems: "center",
-  },
-  requestsMutedText: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    fontWeight: "500",
-  },
-  signOutRow: {
-    backgroundColor: "rgba(220, 38, 38, 0.08)",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(220, 38, 38, 0.2)",
-    marginTop: 12,
-  },
-  signOutText: {
-    color: COLORS.error,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  modalBg: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "85%",
-    minHeight: "50%",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 32,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 12,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  closeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  closeBtnText: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  emptyModalState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  emptyModalText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  requestCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  requestCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  requestStudentName: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  requestStudentId: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: "700",
-  },
-  requestReason: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
-    marginBottom: 14,
-    fontStyle: "italic",
-  },
-  requestActionsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionBtn: {
-    flex: 1,
-    height: 38,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  approveBtn: {
-    backgroundColor: "#16A34A",
-  },
-  rejectBtn: {
-    backgroundColor: COLORS.error,
-  },
-  actionBtnText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  studentCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  studentName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.text,
-  },
-  studentId: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  checkinTime: {
-    fontSize: 12,
-    color: COLORS.success,
-    fontWeight: "700",
-  },
-  historyCardLink: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-    elevation: 4,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  historyCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  historyCardEmoji: {
-    fontSize: 24,
-  },
-  historyCardTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.white,
-  },
-  historyCardSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.75)",
-    marginTop: 2,
-  },
-  historyCardArrow: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  selectAllBtn: {
-    marginTop: 4,
-  },
-  selectAllBtnText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  bulkActionBar: {
-    backgroundColor: "rgba(74, 21, 75, 0.05)",
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-  },
-  bulkActionTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: COLORS.primary,
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  bulkButtonsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  bulkActionBtn: {
-    flex: 1,
-    height: 40,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bulkApproveBtn: {
-    backgroundColor: "#16A34A",
-  },
-  bulkRejectBtn: {
-    backgroundColor: COLORS.error,
-  },
-  requestCardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: COLORS.primary,
-  },
-  checkboxTick: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  requestedAtText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginBottom: 12,
-  },
-  modalBgCentered: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  qrModalContent: {
-    backgroundColor: COLORS.background,
-    borderRadius: 24,
-    width: "100%",
-    maxWidth: 340,
-    padding: 24,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  qrModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 10,
-  },
-  qrModalTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  qrModalDescription: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 16,
-    marginBottom: 20,
-    paddingHorizontal: 8,
-  },
-  qrContainer: {
-    width: 200,
-    height: 200,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  qrImage: {
-    width: 190,
-    height: 190,
-  },
-  timerContainer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  timerText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: 8,
-  },
-  progressBarBg: {
-    width: "100%",
-    height: 6,
-    backgroundColor: COLORS.border,
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: COLORS.primary,
-  },
-});
+export default LecturerDashboardScreen;

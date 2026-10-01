@@ -97,7 +97,7 @@ export const SupportStaffDashboardScreen: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.cardLink, { backgroundColor: "#EAB308" }]}
+          style={styles.cardLink}
           onPress={() => router.push(ROUTES.APP.BUS_TRACKING)}
           activeOpacity={0.7}
         >
@@ -112,7 +112,7 @@ export const SupportStaffDashboardScreen: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.cardLink, { backgroundColor: "#0EA5E9" }]}
+          style={styles.cardLink}
           onPress={() => router.push(ROUTES.APP.LIBRARY)}
           activeOpacity={0.7}
         >

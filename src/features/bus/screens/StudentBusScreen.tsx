@@ -17,8 +17,9 @@ import { buildUrl } from "@services/api/buildUrl";
 // Register custom ScreenWrapper component for NativeWind support if needed
 cssInterop(ScreenWrapper, { className: "style" });
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+// Enable LayoutAnimation for Android on Old Architecture only (Fabric / New Architecture handles layout animations natively)
+const isFabric = (global as any).nativeFabricUIManager != null;
+if (Platform.OS === "android" && !isFabric && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 

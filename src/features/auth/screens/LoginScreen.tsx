@@ -91,8 +91,8 @@ export const LoginScreen: React.FC = () => {
   const setCollegeDomain = useAuthStore((state) => state.setCollegeDomain);
   const setCollegeSchema = useAuthStore((state) => state.setCollegeSchema);
 
-  const [username, setUsername] = useState("demo_student");
-  const [password, setPassword] = useState("Password123");
+  const [username, setUsername] = useState("isha");
+  const [password, setPassword] = useState("Password123!");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

@@ -78,11 +78,16 @@ export function getErrorMessage(error: unknown): string {
   return errorMessages.UNKNOWN;
 }
 
-/**
- * Log error to console (extend to remote logging when needed).
- */
 export function logError(error: unknown, context?: string): void {
   if (__DEV__) {
-    console.error(`[ErrorHandler]${context ? ` [${context}]` : ""}`, error);
+    if (error instanceof ApiError) {
+      console.warn(
+        `[ErrorHandler]${context ? ` [${context}]` : ""} [Status ${error.statusCode}] ${error.message}`
+      );
+    } else if (error instanceof Error) {
+      console.error(`[ErrorHandler]${context ? ` [${context}]` : ""}`, error);
+    } else {
+      console.warn(`[ErrorHandler]${context ? ` [${context}]` : ""}`, error);
+    }
   }
 }
