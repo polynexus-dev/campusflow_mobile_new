@@ -7,6 +7,18 @@ export const authApi = {
     return response.data; // { access, refresh, user }
   },
 
+  // OTP login, step 1: sends a code to the user's WhatsApp (or email).
+  requestLoginOTP: async (payload: { username: string }) => {
+    const response = await httpClient.post("/login/otp/request/", payload);
+    return response.data;
+  },
+
+  // OTP login, step 2: same response as login().
+  loginWithOTP: async (payload: { username: string; otp: string }) => {
+    const response = await httpClient.post("/login/otp/verify/", payload);
+    return response.data;
+  },
+
   registerStudent: async (studentData: Record<string, any>) => {
     // Send data to /register/student/
     const response = await httpClient.post("/register/student/", studentData);

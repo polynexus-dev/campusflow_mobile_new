@@ -7,6 +7,7 @@ import { cssInterop } from "nativewind";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
 import { authApi } from "../api/authApi";
+import { useCompleteLogin } from "../hooks/useCompleteLogin";
 import { ROUTES } from "@/constants/route";
 
 // Register custom Button component for NativeWind support
@@ -17,9 +18,10 @@ interface EmailInputProps {
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
+  keyboardType?: "email-address" | "default";
 }
 
-const EmailInput: React.FC<EmailInputProps> = ({ label, placeholder, value, onChangeText }) => {
+const EmailInput: React.FC<EmailInputProps> = ({ label, placeholder, value, onChangeText, keyboardType = "email-address" }) => {
   const [isFocused, setIsFocused] = useState(false);
   return (
     <View className="mb-6 w-full">
@@ -34,7 +36,7 @@ const EmailInput: React.FC<EmailInputProps> = ({ label, placeholder, value, onCh
           placeholderTextColor="#94a3b8"
           value={value}
           onChangeText={onChangeText}
-          keyboardType="email-address"
+          keyboardType={keyboardType}
           autoCapitalize="none"
           className="flex-1 h-full text-textMain text-base font-normal p-0"
           onFocus={() => setIsFocused(true)}
@@ -49,8 +51,12 @@ export const VerifyOTPScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const emailParam = typeof params.email === "string" ? params.email : "";
+  // mode=login (from "Sign in with OTP"): username -> WhatsApp code -> logged
+  // in. Otherwise this is account activation after registration.
+  const isLogin = params.mode === "login";
+  const { completeLogin, resetCollege } = useCompleteLogin();
 
-  const [email, setEmail] = useState(emailParam || "student@gmail.com");
+  const [email, setEmail] = useState(emailParam || (isLogin ? "" : "student@gmail.com"));
   const [step, setStep] = useState(emailParam ? 2 : 1);
   const [otp, setOtp] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -82,9 +88,31 @@ export const VerifyOTPScreen: React.FC = () => {
     }
   }, [timer]);
 
+  const requestLoginCode = async (onSent: () => void) => {
+    setResending(true);
+    try {
+      // Login is resolved from the main portal, not a previously used college.
+      resetCollege();
+      const res = await authApi.requestLoginOTP({ username: email.trim() });
+      Alert.alert("Code Sent", res.message || "A login code has been sent to your registered WhatsApp number.");
+      onSent();
+    } catch (err: any) {
+      Alert.alert("Failed", err.message || "Unable to send login code. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSendCode = async () => {
     if (!email) {
-      Alert.alert("Error", "Please enter your college email address.");
+      Alert.alert("Error", isLogin ? "Please enter your username or college email." : "Please enter your college email address.");
+      return;
+    }
+    if (isLogin) {
+      await requestLoginCode(() => {
+        setStep(2);
+        setTimer(30);
+      });
       return;
     }
     setResending(true);
@@ -119,6 +147,19 @@ export const VerifyOTPScreen: React.FC = () => {
     }
     setVerifying(true);
 
+    if (isLogin) {
+      try {
+        const response = await authApi.loginWithOTP({ username: email.trim(), otp });
+        await completeLogin(response, email.trim());
+      } catch (err: any) {
+        resetCollege();
+        Alert.alert("Login Failed", err.message || "Invalid or expired OTP.");
+      } finally {
+        setVerifying(false);
+      }
+      return;
+    }
+
     // Mock bypass for testing
     if (otp === "123456") {
       setTimeout(() => {
@@ -151,6 +192,10 @@ export const VerifyOTPScreen: React.FC = () => {
   const handleResend = async () => {
     if (!email) {
       Alert.alert("Error", "Email address is required to resend OTP.");
+      return;
+    }
+    if (isLogin) {
+      await requestLoginCode(() => setTimer(30));
       return;
     }
     setResending(true);
@@ -214,18 +259,21 @@ export const VerifyOTPScreen: React.FC = () => {
         {step === 1 ? (
           <View className="w-full px-1">
             <Text className="text-3xl font-extrabold text-textMain tracking-[-0.5px] mb-3">
-              OTP Activation
+              {isLogin ? "Sign in with OTP" : "OTP Activation"}
             </Text>
             <Text className="text-[15px] text-textSecondary font-normal leading-[22px] mb-10">
-              Enter your college email address to receive your 6-digit code.
+              {isLogin
+                ? "Enter your username or college email. We'll send a 6-digit code to your registered WhatsApp number."
+                : "Enter your college email address to receive your 6-digit code."}
             </Text>
 
             <View className="mb-8">
               <EmailInput
-                label="Email Address"
+                label={isLogin ? "Username or college email" : "Email Address"}
                 placeholder="ananya.rao@nexuscollege.edu"
                 value={email}
                 onChangeText={setEmail}
+                keyboardType={isLogin ? "default" : "email-address"}
               />
             </View>
 
@@ -242,7 +290,11 @@ export const VerifyOTPScreen: React.FC = () => {
               Enter the code
             </Text>
             <Text className="text-[15px] text-textSecondary font-normal leading-[22px] mb-12">
-              We sent a 6-digit code to <Text className="text-textMain font-semibold">{maskEmail(email)}</Text>
+              {isLogin ? (
+                <>We sent a 6-digit code to the WhatsApp number registered for <Text className="text-textMain font-semibold">{email}</Text></>
+              ) : (
+                <>We sent a 6-digit code to <Text className="text-textMain font-semibold">{maskEmail(email)}</Text></>
+              )}
             </Text>
 
             <TouchableOpacity
@@ -304,7 +356,7 @@ export const VerifyOTPScreen: React.FC = () => {
             </View>
 
             <Button
-              title="Verify & continue"
+              title={isLogin ? "Verify & sign in" : "Verify & continue"}
               onPress={handleVerify}
               loading={verifying}
               className="rounded-xl h-[56px] bg-primary justify-center items-center w-full mt-2"

@@ -4,11 +4,10 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { COLORS } from "@/shared/theme/colors";
 import { Button } from "@/shared/ui/Button";
-import { useAuthStore } from "@store/authStore";
 import { authApi } from "../api/authApi";
+import { useCompleteLogin } from "../hooks/useCompleteLogin";
 import { ROUTES } from "@/constants/route";
 import { Feather } from "@expo/vector-icons";
-import { hasBusConductorAccess } from "@/utils/busAccess";
 
 interface CustomInputProps {
   label?: string;
@@ -87,9 +86,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
 
 export const LoginScreen: React.FC = () => {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
-  const setCollegeDomain = useAuthStore((state) => state.setCollegeDomain);
-  const setCollegeSchema = useAuthStore((state) => state.setCollegeSchema);
+  const { completeLogin, resetCollege } = useCompleteLogin();
 
   const [username, setUsername] = useState("isha");
   const [password, setPassword] = useState("Password123!");
@@ -123,54 +120,10 @@ export const LoginScreen: React.FC = () => {
       // 1. Submit login to the central endpoint (or current resolved host)
       const response = await authApi.login({ username, password });
       console.log("Login response:", JSON.stringify(response, null, 2));
-
-      // 2. Save resolved college domain & schema dynamically from response
-      const resolvedDomain = response.tenant_domain || null;
-      const resolvedSchema = response.tenant_schema || null;  // Backend now returns this directly
-      await setCollegeDomain(resolvedDomain);
-      await setCollegeSchema(resolvedSchema);
-
-      // 3. Construct UserProfile and save to auth state
-      const userProfile = {
-        id: response.user_id,
-        username: response.user || username,
-        email: response.email || "",
-        first_name: response.first_name || "",
-        last_name: response.last_name || "",
-        role: response.roleName || "student",
-        consent_given: response.consent_given ?? true,
-        tenant_name: response.tenant?.name || "your institution",
-        tenant_logo: response.tenant?.logo || null,
-        is_bus_driver: response.is_bus_driver ?? false,
-        is_bus_conductor: response.is_bus_conductor ?? false,
-        bus_route_id: response.bus_route_id ?? null,
-        student_profile: response.profile ? {
-          student_id: response.profile.student_id || "",
-          is_face_registered: response.profile.is_face_registered ?? false,
-          locked_device_id: response.profile.locked_device_id ?? null,
-        } : undefined
-      };
-
-      await setAuth(userProfile, response.access, response.refresh);
-
-      Alert.alert("Success", `Welcome back, ${userProfile.username}!`);
-
-      // Bus driver/conductor accounts get their own trimmed 3-tab Home /
-      // Passengers / Profile experience instead of the student tabs — same
-      // gate app/index.tsx and app/_layout.tsx use, since this redirect
-      // fires before either of those ever gets a chance to run.
-      if (userProfile.role === "guardian") {
-        router.replace(ROUTES.APP.GUARDIAN_HOME);
-      } else if (hasBusConductorAccess(userProfile)) {
-        router.replace(ROUTES.APP.DRIVER_DASHBOARD);
-      } else {
-        router.replace(ROUTES.APP.DASHBOARD);
-      }
+      await completeLogin(response, username);
     } catch (err: any) {
       console.error("Login failure", err);
-      // Reset domain/schema if login failed so it doesn't get stuck
-      setCollegeDomain(null);
-      setCollegeSchema(null);
+      resetCollege();
       Alert.alert("Login Failed", err.message || "Invalid credentials, please try again.");
     } finally {
       setLoading(false);
@@ -250,7 +203,7 @@ export const LoginScreen: React.FC = () => {
           <Button
             title="Sign in with OTP instead"
             variant="outline"
-            onPress={() => router.push(ROUTES.AUTH.OTP)}
+            onPress={() => router.push({ pathname: ROUTES.AUTH.OTP, params: { mode: "login" } })}
             style={styles.otpButton}
             textStyle={styles.otpButtonText}
           />
