@@ -5,6 +5,7 @@ import { COLORS } from "@/shared/theme/colors";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
 import { ScreenWrapper } from "@/shared/ui/ScreenWrapper";
 import { ROUTES } from "@/constants/route";
+import { isAuthOrPermissionError } from "@/errors/errorHandler";
 
 export const TimetableScreen: React.FC = () => {
   const router = useRouter();
@@ -19,7 +20,7 @@ export const TimetableScreen: React.FC = () => {
         const data = res.results || res;
         setLectures(Array.isArray(data) ? data : []);
       } catch (err: any) {
-        console.error("Error Loading Timetable Lectures:", err);
+        if (!isAuthOrPermissionError(err)) console.error("Error Loading Timetable Lectures:", err);
       } finally {
         setLoading(false);
       }

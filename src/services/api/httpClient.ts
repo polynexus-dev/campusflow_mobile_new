@@ -133,6 +133,7 @@ httpClient.interceptors.request.use(
 // only if that fails does the user get logged out below.
 const NO_REFRESH_ENDPOINTS = ["/login/", "/token/refresh/", "/token/verify/"];
 let refreshInFlight: Promise<string> | null = null;
+let logoutInFlight: Promise<void> | null = null;
 
 const refreshAccessToken = (): Promise<string> => {
   const { refreshToken, collegeSchema, setTokens } = useAuthStore.getState();
@@ -232,15 +233,23 @@ httpClient.interceptors.response.use(
     const apiError = ApiError.fromResponse(statusCode, message, endpoint, responseData);
     logError(apiError, `httpClient:response [${endpoint}]`);
 
-    // Handle session expiry / token invalidation
+    // Handle session expiry / token invalidation. Concurrent 401s share one
+    // logout instead of each wiping storage and resetting the store again.
     if (statusCode === 401) {
       const isLoginRequest = endpoint.includes("login");
-      if (!isLoginRequest) {
-        try {
-          await useAuthStore.getState().logout();
-        } catch (logoutError) {
-          console.error("Failed to automatically logout after 401 error", logoutError);
+      if (!isLoginRequest && useAuthStore.getState().isAuthenticated) {
+        if (!logoutInFlight) {
+          logoutInFlight = useAuthStore
+            .getState()
+            .logout()
+            .catch((logoutError) => {
+              console.error("Failed to automatically logout after 401 error", logoutError);
+            })
+            .finally(() => {
+              logoutInFlight = null;
+            });
         }
+        await logoutInFlight;
       }
     }
     return Promise.reject(apiError);

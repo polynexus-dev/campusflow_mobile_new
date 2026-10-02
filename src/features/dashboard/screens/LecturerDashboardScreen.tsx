@@ -22,6 +22,7 @@ import { useAuthStore } from "@store/authStore";
 import { hasBusConductorAccess } from "@/utils/busAccess";
 import { ROUTES } from "@/constants/route";
 import { attendanceApi } from "@/features/attendance/api/attendanceApi";
+import { isAuthOrPermissionError } from "@/errors/errorHandler";
 import { ParticularItemRow } from "../components/ParticularItemRow";
 
 type Lecture = {
@@ -203,11 +204,11 @@ export const LecturerDashboardScreen: React.FC = () => {
           const resets = await attendanceApi.getLecturerDeviceResetRequests();
           setDeviceResets(resets || []);
         } catch (err) {
-          console.error("Failed to load device resets:", err);
+          if (!isAuthOrPermissionError(err)) console.error("Failed to load device resets:", err);
         }
       }
     } catch (err) {
-      console.error("Failed to load lectures:", err);
+      if (!isAuthOrPermissionError(err)) console.error("Failed to load lectures:", err);
     } finally {
       setLoadingLectures(false);
       setRefreshing(false);
@@ -405,7 +406,7 @@ export const LecturerDashboardScreen: React.FC = () => {
       const data = await attendanceApi.getLecturerDeviceResetRequests();
       setDeviceResets(data || []);
     } catch (err) {
-      console.error("Failed to load device resets:", err);
+      if (!isAuthOrPermissionError(err)) console.error("Failed to load device resets:", err);
     } finally {
       setLoadingDeviceResets(false);
     }

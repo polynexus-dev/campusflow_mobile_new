@@ -91,3 +91,13 @@ export function logError(error: unknown, context?: string): void {
     }
   }
 }
+
+/**
+ * True for errors the app already handles on its own: a dead session (401 —
+ * httpClient logs the user out) or a module the College Admin has disabled
+ * for this role (403). Screens should degrade quietly on these rather than
+ * console.error, which raises a red LogBox in dev.
+ */
+export function isAuthOrPermissionError(error: unknown): boolean {
+  return error instanceof ApiError && (error.statusCode === 401 || error.statusCode === 403);
+}
